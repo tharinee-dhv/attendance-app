@@ -1,141 +1,126 @@
-html<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึกเวลาทำงาน (GPS Tabs Pro)</title>
+    <title>GPS Time Attendance Pro</title>
     <script src="https://tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 font-sans min-h-screen p-4 flex flex-col items-center justify-start text-slate-100">
-
     <div class="w-full max-w-xl bg-slate-800 rounded-2xl shadow-2xl mt-4 border border-slate-700 overflow-hidden">
-        
-        <!-- ระบบสลับ 2 Tabs ด้านบนสุด -->
         <div class="flex border-b border-slate-700 bg-slate-850">
-            <button id="tabEmpBtn" onclick="switchTab('employee')" class="flex-1 py-4 text-center text-sm font-bold border-b-2 border-indigo-500 bg-slate-800 text-indigo-400 transition-all">
-                👤 สำหรับพนักงาน (Employee)
-            </button>
-            <button id="tabAdminBtn" onclick="switchTab('admin')" class="flex-1 py-4 text-center text-sm font-bold border-b-2 border-transparent text-slate-400 hover:bg-slate-700/50 transition-all">
-                🔑 ผู้ดูแลระบบ (Admin)
-            </button>
+            <button id="tabEmpBtn" onclick="switchTab('employee')" class="flex-1 py-4 text-center text-sm font-bold border-b-2 border-indigo-500 bg-slate-800 text-indigo-400">👤 พนักงาน (Employee)</button>
+            <button id="tabAdminBtn" onclick="switchTab('admin')" class="flex-1 py-4 text-center text-sm font-bold border-b-2 border-transparent text-slate-400 hover:bg-slate-700/50">🔑 ผู้ดูแลระบบ (Admin)</button>
         </div>
-
         <div class="p-6">
-            <!-- กล่องแจ้งเตือนภัยเชิงรุก: เตือนให้เปิด Location สัญญาณดาวเทียม -->
             <div id="locationPermissionWarning" class="hidden mb-5 bg-amber-950/80 border border-amber-800 text-amber-300 p-4 rounded-xl text-xs space-y-2">
-                <p class="font-bold text-sm flex items-center gap-1.5">⚠️ โปรดเปิดตำแหน่งที่ตั้ง (Location GPS)</p>
-                <p>ระบบตรวจพบว่าคุณยังไม่ได้อนุญาตให้เว็บเข้าถึงพิกัดตำแหน่ง หรือยังไม่ได้เปิดระบบ GPS บนมือถือ/คอมพิวเตอร์</p>
-                <p class="text-slate-400 font-medium">💡 วิธีแก้ไข: กดไอคอนรูปแม่กุญแจ 🔒 หรือรูปปักหมุดที่แถบกรอกลิงก์ด้านบนสุดของเบราว์เซอร์ แล้วเลือก "อนุญาต (Allow)" จากนั้นรีเฟรชหน้าจออีกครั้งครับ</p>
+                <p class="font-bold text-sm">⚠️ โปรดเปิดตำแหน่งที่ตั้ง (Location GPS)</p>
+                <p>ระบบตรวจพบว่าคุณยังไม่ได้อนุญาตให้เว็บเข้าถึงพิกัดตำแหน่ง หรือยังไม่ได้เปิดระบบ GPS บนมือถือ</p>
+                <p class="text-slate-400 font-medium">💡 วิธีแก้ไข: กดไอคอนรูปแม่กุญแจ 🔒 ที่แถบกรอกลิงก์ด้านบนสุด เลือก "อนุญาต (Allow)" แล้วรีเฟรชหน้าจอครับ</p>
             </div>
-
-            <!-- ==================== [TAB ซ้าย] โซนหน้าจอของพนักงาน ==================== -->
             <div id="employeeTabContent" class="space-y-4">
                 <div class="bg-slate-700 p-3 rounded-xl">
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">เลือกชื่อของคุณ</label>
-                    <select id="userSelect" onchange="handleUserSwitch()" class="w-full bg-slate-800 border border-slate-600 text-slate-100 text-sm rounded-lg p-3 font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <select id="userSelect" onchange="handleUserSwitch()" class="w-full bg-slate-800 border border-slate-600 text-slate-100 text-sm rounded-lg p-3 focus:outline-none">
                         <option value="" disabled selected>-- กรุณาเลือกชื่อของคุณ --</option>
-                        <option value="nut">A: นัท</option>
-                        <option value="bee">B: บี</option>
-                        <option value="joy">C: จอย</option>
-                        <option value="mild">D: มาย</option>
+                        <option value="nut">A: นัท</option><option value="bee">B: บี</option><option value="joy">C: จอย</option><option value="mild">D: มาย</option>
                     </select>
                 </div>
-
                 <div id="employeeActionZone" class="hidden space-y-4">
                     <div class="p-4 bg-slate-700/50 rounded-xl text-center border border-slate-600">
                         <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">พิกัดสถานที่ปฏิบัติงานที่กำหนดไว้</p>
                         <p id="targetCoords" class="text-sm font-mono font-bold text-indigo-400 mt-1">-</p>
                     </div>
-
                     <div class="flex gap-4">
-                        <button id="btnClockIn" onclick="triggerGPSCheck('Clock In')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold py-4 px-4 rounded-xl shadow-lg transition-all active:scale-95">
-                            📥 ลงชื่อเข้างาน (Clock In)
-                        </button>
-                        <button id="btnClockOut" onclick="triggerGPSCheck('Clock Out')" class="flex-1 bg-rose-600 hover:bg-rose-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold py-4 px-4 rounded-xl shadow-lg transition-all active:scale-95">
-                            📤 ลงชื่อออกงาน (Clock Out)
-                        </button>
+                        <button id="btnClockIn" onclick="triggerGPSCheck('Clock In')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition-all">📥 Clock In</button>
+                        <button id="btnClockOut" onclick="triggerGPSCheck('Clock Out')" class="flex-1 bg-rose-600 hover:bg-rose-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition-all">📤 Clock Out</button>
                     </div>
-
                     <div id="gpsLoadingStatus" class="text-xs text-slate-400 bg-slate-700 p-3 rounded-lg border border-slate-600 text-center hidden"></div>
-
-                    <!-- ประวัติพนักงาน: เห็นแค่ของตัวเองในวันนี้เท่านั้น -->
                     <div class="mt-6 border-t border-slate-700 pt-4">
                         <h3 class="text-sm font-bold text-slate-300 mb-2">⏱️ ประวัติการลงเวลาของคุณวันนี้</h3>
-                        <div class="bg-slate-900 rounded-xl p-3 text-xs text-slate-400 space-y-2" id="empTodayLogs">
-                            <!-- ประวัติส่วนตัวแสดงที่นี่ -->
-                        </div>
+                        <div class="bg-slate-900 rounded-xl p-3 text-xs text-slate-400 space-y-2" id="empTodayLogs"></div>
                     </div>
                 </div>
             </div>
-
-            <!-- ==================== [TAB ขวา] โซนหน้าจอของ ADMIN ==================== -->
             <div id="adminTabContent" class="hidden space-y-4">
-                <!-- หน้าจอล็อกอินก่อนเข้าถึงระบบหลังบ้าน -->
                 <div id="adminAuthZone" class="bg-slate-700 p-4 rounded-xl border border-slate-600 space-y-3">
                     <h3 class="text-sm font-bold text-indigo-300">🔐 กรุณาใส่รหัสผ่านผู้ดูแลระบบ</h3>
                     <div class="flex gap-2">
-                        <input type="password" id="adminPassword" placeholder="ใส่รหัสผ่านที่นี่..." class="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <button onclick="verifyAdminPassword()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">ยืนยัน</button>
+                        <input type="password" id="adminPassword" placeholder="ใส่รหัสผ่านที่นี่..." class="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none">
+                        <button onclick="verifyAdminPassword()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-2 rounded-lg">ยืนยัน</button>
                     </div>
-                    <p class="text-[11px] text-slate-400">*รหัสผ่านทดสอบเริ่มต้นคือ: admin1234</p>
+                    <p class="text-[11px] text-slate-400">*รหัสผ่านคือ: admin1234</p>
                 </div>
-
-                <!-- แผงข้อมูลแท้จริงของ Admin (จะแสดงเมื่อกรอกรหัสผ่านผ่านแล้ว) -->
                 <div id="adminDashboardZone" class="hidden space-y-4 w-full">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-700 pb-3">
-                        <h2 class="text-sm font-bold text-slate-200">📊 แผงควบคุมสถิติผู้ดูแลระบบ</h2>
-                        <button onclick="clearAllData()" class="text-[11px] bg-red-900/40 hover:bg-red-900/60 text-red-400 border border-red-800 px-2 py-1 rounded font-medium">ล้างฐานข้อมูลทั้งหมด</button>
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                        <h2 class="text-sm font-bold text-slate-200">📊 สถิติผู้ดูแลระบบ</h2>
+                        <button onclick="clearAllData()" class="text-[11px] bg-red-900/40 text-red-400 border border-red-800 px-2 py-1 rounded">ล้างข้อมูลทั้งหมด</button>
                     </div>
-                    
-                    <!-- เมนูกรองข้อมูลสำหรับผู้ดูแลระบบ -->
                     <div class="grid grid-cols-2 gap-3 bg-slate-700 p-3 rounded-xl border border-slate-600">
                         <div>
-                            <label class="block text-[11px] text-slate-400 mb-1 font-medium">รายชื่อพนักงาน</label>
+                            <label class="block text-[11px] text-slate-400 mb-1">รายชื่อพนักงาน</label>
                             <select id="adminFilterUser" onchange="loadAdminDashboard()" class="w-full bg-slate-800 border border-slate-600 text-xs text-white rounded-md p-2">
-                                <option value="all">ดูพนักงานทุกคน</option>
-                                <option value="นัท">นัท</option>
-                                <option value="บี">บี</option>
-                                <option value="จอย">จอย</option>
-                                <option value="มาย">มาย</option>
+                                <option value="all">ดูพนักงานทุกคน</option><option value="นัท">นัท</option><option value="บี">บี</option><option value="จอย">จอย</option><option value="มาย">มาย</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-[11px] text-slate-400 mb-1 font-medium">เลือกเดือน/ปี</label>
+                            <label class="block text-[11px] text-slate-400 mb-1">เลือกเดือน/ปี</label>
                             <input type="month" id="adminFilterMonth" onchange="loadAdminDashboard()" class="w-full bg-slate-800 border border-slate-600 text-xs text-white rounded-md p-2">
                         </div>
                     </div>
-
-                    <!-- แผงรายงานสรุปเวลาทำงานรวมประจำเดือน -->
                     <div class="bg-indigo-600 text-white p-4 rounded-xl flex justify-between items-center shadow-lg">
                         <div>
-                            <p class="text-[10px] opacity-80 uppercase tracking-wider font-semibold">สรุปเวลาทำงานสะสมที่เลือก</p>
+                            <p class="text-[10px] opacity-80 uppercase font-semibold">สรุปเวลาทำงานสะสมที่เลือก</p>
                             <p id="adminTotalHours" class="text-2xl font-bold mt-1">0.0 ชั่วโมง</p>
                         </div>
                         <span class="text-2xl">💼</span>
                     </div>
-                    
-                    <!-- ตารางบันทึกเวลาทำงานจริง -->
                     <div>
-                        <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">📋 ตารางบันทึกเข้า-ออกงานที่สำเร็จ</h3>
+                        <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">📋 ตารางบันทึกสำเร็จ</h3>
                         <div class="overflow-x-auto border border-slate-700 rounded-xl shadow-sm">
                             <table class="w-full text-[11px] text-left text-slate-300 bg-slate-800">
                                 <thead class="text-slate-400 uppercase bg-slate-700/50 border-b border-slate-700">
-                                    <tr>
-                                        <th class="py-2 px-2.5">วันที่</th>
-                                        <th class="py-2 px-2.5">ชื่อ</th>
-                                        <th class="py-2 px-2.5">สถานะ</th>
-                                        <th class="py-2 px-2.5">เวลาคีย์</th>
-                                        <th class="py-2 px-2.5">ระยะห่าง</th>
-                                    </tr>
+                                    <tr><th class="py-2 px-2.5">วันที่</th><th class="py-2 px-2.5">ชื่อ</th><th class="py-2 px-2.5">สถานะ</th><th class="py-2 px-2.5">เวลา</th><th class="py-2 px-2.5">ระยะ</th></tr>
                                 </thead>
                                 <tbody id="adminSuccessLogBody"></tbody>
                             </table>
                         </div>
                     </div>
-
-                    <!-- ตารางรายงานการทำรายการล้มเหลว -->
                     <div class="pt-2">
-                        <h3 class="text-[11px] font-bold text-rose-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                            ⚠️ รายงานประวัติความพยายามกดนอกพื้นที่ (Log Attempts)
-                        </h3>
-Use code with caution.วันที่/เวลาชื่อพนักงานพิกัดจริงที่ตรวจจับได้ห่างไกล (ม.)const usersConfig = {nut: { name: "นัท", lat: 13.742930940465662, lng: 100.57758168932462 },bee: { name: "บี", lat: 13.742930940465662, lng: 100.57758168932462 },joy: { name: "จอย", lat: 13.748638810033686, lng: 100.63870881219955 },mild: { name: "มาย", lat: 13.748638810033686, lng: 100.63870881219955 }};let isAdminAuthenticated = false; // ตัวแปรเช็กสถานะการล็อกอินของแอดมินwindow.onload = function() {const today = new Date();const year = today.getFullYear();const month = String(today.getMonth() + 1).padStart(2, '0');document.getElementById('adminFilterMonth').value = ${year}-${month};checkInitialLocationPermission();};// ฟังก์ชันสลับเมนู Tabs ด้านบนfunction switchTab(tabName) {const empTabBtn = document.getElementById('tabEmpBtn');const adminTabBtn = document.getElementById('tabAdminBtn');const empContent = document.getElementById('employeeTabContent');const adminContent = document.getElementById('adminTabContent');if (tabName === 'employee') {// ปรับแต่ง UI ปุ่มกดempTabBtn.className = "flex-1 py-4 text-center text-sm font-bold border-b-2 border-indigo-500 bg-slate-800 text-indigo-400 transition-all";adminTabBtn.className = "flex-1 py-4 text-center text-sm font-bold border-b-2 border-transparent text-slate-400 hover:bg-slate-700/50 transition-all";// สลับการแสดงผลหน้าเนื้อหาempContent.classList.remove('hidden');adminContent.classList.add('hidden');checkInitialLocationPermission();} else {adminTabBtn.className = "flex-1 py-4 text-center text-sm font-bold border-b-2 border-indigo-500 bg-slate-800 text-indigo-400 transition-all";empTabBtn.className = "flex-1 py-4 text-center text-sm font-bold border-b-2 border-transparent text-slate-400 hover:bg-slate-700/50 transition-all";empContent.classList.add('hidden');adminContent.classList.remove('hidden');// ตรวจสอบว่าเคยเข้าสู่ระบบแอดมินหรือยังif (isAdminAuthenticated) {document.getElementById('adminAuthZone').classList.add('hidden');document.getElementById('adminDashboardZone').classList.remove('hidden');loadAdminDashboard();} else {document.getElementById('adminAuthZone').classList.remove('hidden');document.getElementById('adminDashboardZone').classList.add('hidden');}}}function checkInitialLocationPermission() {if (!navigator.geolocation) {showLocationWarning(true);return;}navigator.geolocation.getCurrentPosition(() => { showLocationWarning(false); },(err) => {if (err.code === err.PERMISSION_DENIED || err.code === err.POSITION_UNAVAILABLE) {showLocationWarning(true);}},{ timeout: 2000 });}function showLocationWarning(shouldShow) {const warningBox = document.getElementById('locationPermissionWarning');const btnIn = document.getElementById('btnClockIn');const btnOut = document.getElementById('btnClockOut');if (shouldShow) {warningBox.classList.remove('hidden');if(btnIn && btnOut) { btnIn.disabled = true; btnOut.disabled = true; }} else {warningBox.classList.add('hidden');if(btnIn && btnOut) { btnIn.disabled = false; btnOut.disabled = false; }}}function handleUserSwitch() {const selectedUserKey = document.getElementById('userSelect').value;const actionZone = document.getElementById('employeeActionZone');if (selectedUserKey) {actionZone.classList.remove('hidden');const user = usersConfig[selectedUserKey];document.getElementById('targetCoords').innerText = ${user.lat.toFixed(6)}, ${user.lng.toFixed(6)};renderEmployeePanel(user.name);} else {actionZone.classList.add('hidden');}}function verifyAdminPassword() {const passInput = document.getElementById('adminPassword').value;if (passInput === 'admin1234') {isAdminAuthenticated = true; // บันทึกสถานะล็อกอินสำเร็จdocument.getElementById('adminAuthZone').classList.add('hidden');document.getElementById('adminDashboardZone').classList.remove('hidden');loadAdminDashboard();} else {alert('❌ รหัสผ่านไม่ถูกต้อง ไม่สามารถเข้าถึงข้อมูลผู้ดูแลระบบได้');}}function triggerGPSCheck(actionType) {const currentKey = document.getElementById('userSelect').value;const user = usersConfig[currentKey];const loadStatus = document.getElementById('gpsLoadingStatus');loadStatus.innerText = "⏳ กำลังเชื่อมต่อสัญญาณดาวเทียม (GPS)...";loadStatus.classList.remove('hidden');navigator.geolocation.getCurrentPosition((pos) => {loadStatus.classList.add('hidden');showLocationWarning(false);const currentLat = pos.coords.latitude;const currentLng = pos.coords.longitude;const distanceMeters = getHaversineDistance(currentLat, currentLng, user.lat, user.lng);if (distanceMeters <= 100) {saveSystemLog(user.name, actionType, distanceMeters, true, currentLat, currentLng);alert(✅ บันทึก ${actionType} สำเร็จแล้ว!\nคุณอยู่ในพื้นที่ที่กำหนด (ห่างจากจุดเช็กอิน ${Math.round(distanceMeters)} เมตร));renderEmployeePanel(user.name);} else {saveSystemLog(user.name, actionType, distanceMeters, false, currentLat, currentLng);alert(❌ ไม่สามารถลงเวลาทำงานได้!\nคุณอยู่นอกพื้นที่ทำงาน (ห่างออกไป ${Math.round(distanceMeters)} เมตร / ระบบอนุญาตให้ห่างไม่เกิน 100 เมตรเท่านั้น));}},(err) => {loadStatus.classList.add('hidden');showLocationWarning(true);alert("❌ ล้มเหลว: ระบบไม่สามารถเข้าถึงตำแหน่งของคุณได้! กรุณาเปิดระบบ Location บนอุปกรณ์ของคุณก่อนนะครับ");},{ enableHighAccuracy: true, timeout: 12000 });}function getHaversineDistance(lat1, lon1, lat2, lon2) {const EARTH_RADIUS = 6371e3;const radLat1 = lat1 * Math.PI / 180;const radLat2 = lat2 * Math.PI / 180;const deltaLat = (lat2 - lat1) * Math.PI / 180;const deltaLon = (lon2 - lon1) * Math.PI / 180;const calculationA = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +Math.cos(radLat1) * Math.cos(radLat2) *Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);return EARTH_RADIUS * (2 * Math.atan2(Math.sqrt(calculationA), Math.sqrt(1 - calculationA)));}function saveSystemLog(name, type, distance, isSuccess, actualLat, actualLng) {let coreLogs = JSON.parse(localStorage.getItem('gps_attendance_secure_v3')) || [];const timestamp = new Date();const displayDate = timestamp.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });const displayTime = timestamp.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });const rawIso = timestamp.toISOString();coreLogs.unshift({name, type, displayDate, displayTime, rawIso,distance: Math.round(distance),isSuccess,actualLat: actualLat.toFixed(6),actualLng: actualLng.toFixed(6)});localStorage.setItem('gps_attendance_secure_v3', JSON.stringify(coreLogs));}function renderEmployeePanel(employeeName) {const logs = JSON.parse(localStorage.getItem('gps_attendance_secure_v3')) || [];const logBoxContainer = document.getElementById('empTodayLogs');logBoxContainer.innerHTML = '';const todayDateStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });const personalTodayRecords = logs.filter(item => item.name === employeeName && item.displayDate === todayDateStr && item.isSuccess === true);if (personalTodayRecords.length === 0) {logBoxContainer.innerHTML = <p class="text-center py-2 text-slate-500 italic">ไม่มีข้อมูลการลงเวลาทำงานจริงในวันนี้ของคุณ</p>;return;}personalTodayRecords.forEach(item => {const rowBlock = document.createElement('div');rowBlock.className = "flex justify-between items-center bg-slate-800 p-2.5 rounded-lg border border-slate-700 shadow";const badgeStyle = item.type === 'Clock In' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800';rowBlock.innerHTML = <span class="px-2 py-0.5 rounded text-[10px] font-bold ${badgeStyle}">${item.type}</span> <span class="font-mono text-slate-200 font-bold">${item.displayTime} น.</span> <span class="text-slate-400 text-[10px]">(ห่างจุดหลัก ${item.distance} ม.)</span>;logBoxContainer.appendChild(rowBlock);});}function loadAdminDashboard() {const logs = JSON.parse(localStorage.getItem('gps_attendance_secure_v3')) || [];const selectedUser = document.getElementById('adminFilterUser').value;const selectedMonth = document.getElementById('adminFilterMonth').value;const successTable = document.getElementById('adminSuccessLogBody');const failTable = document.getElementById('adminFailLogBody');successTable.innerHTML = '';failTable.innerHTML = '';if (!selectedMonth) return;const [filterYear, filterMonth] = selectedMonth.split('-');const totalScopedLogs = logs.filter(item => {const dateObj = new Date(item.rawIso);const currentRecordYear = dateObj.getFullYear();const currentRecordMonth = String(dateObj.getMonth() + 1).padStart(2, '0');const isUserMatched = (selectedUser === 'all' || item.name === selectedUser);const isMonthMatched = (${currentRecordYear}-${currentRecordMonth} === ${filterYear}-${filterMonth});return isUserMatched && isMonthMatched;});const successGroup = totalScopedLogs.filter(item => item.isSuccess === true);const failGroup = totalScopedLogs.filter(item => item.isSuccess === false);if (successGroup.length === 0) {successTable.innerHTML = <tr><td colspan="5" class="text-center py-4 text-slate-500 italic">ไม่พบประวัติการลงเวลาทำรายการที่สำเร็จ</td></tr>;} else {successGroup.forEach(item => {const tr = document.createElement('tr');tr.className = "border-b border-slate-700 hover:bg-slate-700/40";const badgeColor = item.type === 'Clock In' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold';tr.innerHTML = <td class="py-2.5 px-2.5">${item.displayDate}</td> <td class="py-2.5 px-2.5 font-semibold text-white">${item.name}</td> <td class="py-2.5 px-2.5 ${badgeColor}">${item.type}</td> <td class="py-2.5 px-2.5 font-mono">${item.displayTime}</td> <td class="py-2.5 px-2.5 text-slate-500">${item.distance} ม.</td>;successTable.appendChild(tr);});}if (failGroup.length === 0) {failTable.innerHTML = <tr><td colspan="4" class="text-center py-4 text-slate-600 italic">ไม่มีรายงานบุคคลพยายามกดลงเวลานอกพื้นที่</td></tr>;} else {failGroup.forEach(item => {const tr = document.createElement('tr');tr.className = "border-b border-rose-950/50 bg-rose-950/10 hover:bg-rose-950/30 text-rose-200/90";tr.innerHTML = <td class="py-2 px-2.5 font-mono text-slate-400">${item.displayDate} ${item.displayTime}</td> <td class="py-2 px-2.5 font-bold text-rose-300">${item.name}</td> <td class="py-2 px-2.5 font-mono text-[10px] text-amber-400 bg-slate-900/50 rounded p-1 inline-block mt-1">${item.actualLat}, ${item.actualLng}</td> <td class="py-2 px-2.5 text-right pr-4 font-bold text-rose-400">${item.distance} ม.</td>;failTable.appendChild(tr);});}calculateAdminHoursSummary(successGroup);}function calculateAdminHoursSummary(successLogs) {let workingGroups = {};[...successLogs].reverse().forEach(item => {const combineKey = ${item.name}_${item.displayDate};if (!workingGroups[combineKey]) {workingGroups[workingGroups[combineKey] = { clockInTime: null, clockOutTime: null }];}if (item.type === 'Clock In' && !workingGroups[combineKey].clockInTime) {workingGroups[combineKey].clockInTime = new Date(item.rawIso);} else if (item.type === 'Clock Out') {workingGroups[combineKey].clockOutTime = new Date(item.rawIso);}});let totalCalculationMs = 0;for (let targetKey in workingGroups) {const dayPair = workingGroups[targetKey];if (dayPair.clockInTime && dayPair.clockOutTime && dayPair.clockOutTime > dayPair.clockInTime) {totalCalculationMs += (dayPair.clockOutTime - dayPair.clockInTime);}}const calculatedHours = totalCalculationMs / (1000 * 60 * 60);document.getElementById('adminTotalHours').innerText = ${calculatedHours.toFixed(1)} ชั่วโมง;}function clearAllData() {if (confirm('⚠️ คำเตือนระบบ: คุณต้องการทำลายและลบประวัติระบบเวลาทำงานทั้งหมด (รวมถึง Log Attempts) ทิ้งใช่หรือไม่? ข้อมูลจะไม่สามารถดึงกลับมาได้')) {localStorage.removeItem('gps_attendance_secure_v3');loadAdminDashboard();}}
+                        <h3 class="text-[11px] font-bold text-rose-400 uppercase tracking-wider mb-2">⚠️ ประวัติกดนอกพื้นที่ (Log Attempts)</h3>
+                        <div class="overflow-x-auto border border-rose-950 rounded-xl shadow-sm">
+                            <table class="w-full text-[11px] text-left text-rose-300 bg-slate-800">
+                                <thead class="text-rose-400 uppercase bg-rose-950/40 border-b border-rose-900">
+                                    <tr><th class="py-2 px-2.5">วันที่/เวลา</th><th class="py-2 px-2.5">ชื่อ</th><th class="py-2 px-2.5">พิกัดจริงที่ตรวจจับได้</th><th class="py-2 px-2.5">ห่าง (ม.)</th></tr>
+                                </thead>
+                                <tbody id="adminFailLogBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const cf = {
+            nut: { name: "นัท", lat: 13.742931, lng: 100.577582 },
+            bee: { name: "บี", lat: 13.742931, lng: 100.577582 },
+            joy: { name: "จอย", lat: 13.748639, lng: 100.638709 },
+            mild: { name: "มาย", lat: 13.748639, lng: 100.638709 }
+        };
+        let auth = false;
+        window.onload = function() {
+            const t = new Date();
+            document.getElementById('adminFilterMonth').value = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`;
+            chkGPS();
+        };
+        function switchTab(n) {
+            const bE = document.getElementById('tabEmpBtn'), bA = document.getElementById('tabAdminBtn');
+            const cE = document.getElementById('employeeTabContent'), cA = document.getElementById('adminTabContent');
+            if (n === 'employee') {
+                bE.className = "flex-1 py-4 text-center text-sm font-bold border-b-2 border-indigo-500 bg-slate-800 text-indigo-400";
+                bA.className = "flex-1 py-4 text-center text-sm font-bold border-b-2 border-transparent text-slate-400 hover:bg-slate-700/50";
+                cE.classList.remove('hidden'); cA.classList.add('hidden'); chkGPS();
+            } else {
+                bA.className = "flex-1 py-4 text-center text-sm font-bold border-b-2 border-indigo-500 bg-slate-800 text-indigo-400";
+bE.className = "flex-1 py-4 text-center text-sm font-bold border-b-2 border-transparent text-slate-400 hover:bg-slate-700/50";cE.classList.add('hidden'); cA.classList.remove('hidden');if (auth) { document.getElementById('adminAuthZone').classList.add('hidden'); document.getElementById('adminDashboardZone').classList.remove('hidden'); loadAdminDashboard(); }else { document.getElementById('adminAuthZone').classList.remove('hidden'); document.getElementById('adminDashboardZone').classList.add('hidden'); }}}function chkGPS() {if (!navigator.geolocation) { showW(true); return; }navigator.geolocation.getCurrentPosition(() => showW(false), () => showW(true), { timeout: 2000 });}function showW(s) {document.getElementById('locationPermissionWarning').classList.toggle('hidden', !s);const b1 = document.getElementById('btnClockIn'), b2 = document.getElementById('btnClockOut');if(b1 && b2) { b1.disabled = s; b2.disabled = s; }}function handleUserSwitch() {const k = document.getElementById('userSelect').value;document.getElementById('employeeActionZone').classList.toggle('hidden', !k);if (k) { document.getElementById('targetCoords').innerText = ${cf[k].lat.toFixed(6)}, ${cf[k].lng.toFixed(6)}; renderEmp(cf[k].name); }}function verifyAdminPassword() {if (document.getElementById('adminPassword').value === 'admin1234') { auth = true; document.getElementById('adminAuthZone').classList.add('hidden'); document.getElementById('adminDashboardZone').classList.remove('hidden'); loadAdminDashboard(); }else alert('❌ รหัสผ่านไม่ถูกต้อง');}function triggerGPSCheck(act) {const u = cf[document.getElementById('userSelect').value], ls = document.getElementById('gpsLoadingStatus');ls.innerText = "⏳ กำลังเชื่อมต่อสัญญาณ GPS..."; ls.classList.remove('hidden');navigator.geolocation.getCurrentPosition((pos) => {ls.classList.add('hidden'); showW(false);const d = getDist(pos.coords.latitude, pos.coords.longitude, u.lat, u.lng);if (d <= 100) { saveL(u.name, act, d, true, pos.coords.latitude, pos.coords.longitude); alert(✅ บันทึก ${act} สำเร็จ! ห่าง ${Math.round(d)} เมตร); renderEmp(u.name); }else { saveL(u.name, act, d, false, pos.coords.latitude, pos.coords.longitude); alert(❌ ล้มเหลว! อยู่นอกพื้นที่ทำงาน (ห่าง ${Math.round(d)} ม. / ห้ามเกิน 100 ม.)); }}, () => { ls.classList.add('hidden'); showW(true); alert("❌ กรุณาเปิดระบบ Location บนอุปกรณ์ของคุณก่อนนะครับ"); }, { enableHighAccuracy: true, timeout: 12000 });}function getDist(la1, lo1, la2, lo2) {const R = 6371e3, p1 = la1 * Math.PI / 180, p2 = la2 * Math.PI / 180, dLat = (la2 - la1) * Math.PI / 180, dLon = (lo2 - lo1) * Math.PI / 180;const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dLon/2) * Math.sin(dLon/2);return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));}function saveL(n, t, d, s, al, ag) {let l = JSON.parse(localStorage.getItem('gps_v3')) || []; const now = new Date();l.unshift({ name: n, type: t, dDate: now.toLocaleDateString('th-TH'), dTime: now.toLocaleTimeString('th-TH'), rIso: now.toISOString(), dist: Math.round(d), isS: s, aLt: al.toFixed(6), aLg: ag.toFixed(6) });localStorage.setItem('gps_v3', JSON.stringify(l));}function renderEmp(en) {const l = JSON.parse(localStorage.getItem('gps_v3')) || [], c = document.getElementById('empTodayLogs'); c.innerHTML = '';const rec = l.filter(i => i.name === en && i.dDate === new Date().toLocaleDateString('th-TH') && i.isS);if (!rec.length) { c.innerHTML = <p class="text-center py-2 text-slate-500 italic">ไม่มีข้อมูลการลงเวลาในวันนี้</p>; return; }rec.forEach(i => {const d = document.createElement('div'); d.className = "flex justify-between items-center bg-slate-800 p-2.5 rounded-lg border border-slate-700 shadow";const b = i.type === 'Clock In' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800';d.innerHTML = <span class="px-2 py-0.5 rounded text-[10px] font-bold ${b}">${i.type}</span><span class="font-mono text-slate-200 font-bold">${i.dTime} น.</span><span class="text-slate-400 text-[10px]">(ห่างจุดหลัก ${i.dist} ม.)</span>;c.appendChild(d);});}function loadAdminDashboard() {const l = JSON.parse(localStorage.getItem('gps_v3')) || [], su = document.getElementById('adminFilterUser').value, sm = document.getElementById('adminFilterMonth').value;const sT = document.getElementById('adminSuccessLogBody'), fT = document.getElementById('adminFailLogBody');sT.innerHTML = ''; fT.innerHTML = ''; if (!sm) return;const fLogs = l.filter(i => { const d = new Date(i.rIso); return (su === 'all' || i.name === su) && (${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')} === sm); });const sG = fLogs.filter(i => i.isS), fG = fLogs.filter(i => !i.isS);if (!sG.length) sT.innerHTML = <tr><td colspan="5" class="text-center py-4 text-slate-500 italic">ไม่พบประวัติสำเร็จ</td></tr>;else sG.forEach(i => { const tr = document.createElement('tr'); tr.className = "border-b border-slate-700 hover:bg-slate-700/40"; tr.innerHTML = <td class="py-2.5 px-2.5">${i.dDate}</td><td class="py-2.5 px-2.5 font-semibold text-white">${i.name}</td><td class="py-2.5 px-2.5 ${i.type==='Clock In'?'text-emerald-400':'text-rose-400'}">${i.type}</td><td class="py-2.5 px-2.5 font-mono">${i.dTime}</td><td class="py-2.5 px-2.5 text-slate-500">${i.dist} ม.</td>; sT.appendChild(tr); });if (!fG.length) fT.innerHTML = <tr><td colspan="4" class="text-center py-4 text-slate-600 italic">ไม่มีประวัติกดนอกพื้นที่</td></tr>;else fG.forEach(i => { const tr = document.createElement('tr'); tr.className = "border-b border-rose-950/50 bg-rose-950/10 text-rose-200/90"; tr.innerHTML = <td class="py-2 px-2.5 font-mono text-slate-400">${i.dDate} ${i.dTime}</td><td class="py-2 px-2.5 font-bold text-rose-300">${i.name}</td><td class="py-2 px-2.5 font-mono text-[10px] text-amber-400 bg-slate-900/50 rounded p-1 inline-block mt-1">${i.aLt}, ${i.aLg}</td><td class="py-2 px-2.5 text-right pr-4 font-bold text-rose-400">${i.dist} ม.</td>; fT.appendChild(tr); });calcHours(sG);}function calcHours(sl) {let wg = {}; [...sl].reverse().forEach(i => { const k = ${i.name}_${i.dDate}; if (!wg[k]) wg[k] = { in: null, out: null }; if (i.type === 'Clock In' && !wg[k].in) wg[k].in = new Date(i.rIso); else if (i.type === 'Clock Out') wg[k].out = new Date(i.rIso); });let ms = 0; for (let k in wg) { if (wg[k].in && wg[k].out && wg[k].out > wg[k].in) ms += (wg[k].out - wg[k].in); }document.getElementById('adminTotalHours').innerText = ${(ms / (1000 * 60 * 60)).toFixed(1)} ชั่วโมง;}function clearAllData() { if (confirm('⚠️ ต้องการลบประวัติทั้งหมดใช่หรือไม่?')) { localStorage.removeItem('gps_v3'); loadAdminDashboard(); } }
