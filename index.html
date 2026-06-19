@@ -5,338 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance GPS System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #f5f5f5;
-            color: #333;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            min-height: 100vh;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .header p {
-            font-size: 13px;
-            opacity: 0.9;
-        }
-
-        .tabs {
-            display: flex;
-            border-bottom: 2px solid #e0e0e0;
-            background: white;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 16px;
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            color: #999;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-
-        .tab-btn.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
-        }
-
-        .tab-content {
-            display: none;
-            padding: 20px;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .section {
-            margin-bottom: 24px;
-        }
-
-        .section-title {
-            font-size: 12px;
-            font-weight: 600;
-            color: #999;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
-        }
-
-        select, input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 14px;
-            margin-bottom: 12px;
-            font-family: inherit;
-        }
-
-        select:focus, input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-
-        .btn-primary {
-            background: #667eea;
-            color: white;
-            width: 100%;
-            padding: 14px;
-        }
-
-        .btn-primary:hover {
-            background: #5568d3;
-        }
-
-        .btn-primary:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .btn-danger {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .btn-danger:hover {
-            background: #f5c6cb;
-        }
-
-        .info-box {
-            background: #d1ecf1;
-            border: 1px solid #bee5eb;
-            color: #0c5460;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            font-size: 13px;
-        }
-
-        .warning-box {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            color: #856404;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            font-size: 13px;
-        }
-
-        .error-box {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            font-size: 13px;
-        }
-
-        .success-box {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 16px;
-            font-size: 13px;
-        }
-
-        .center-text {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .emp-name {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .time-display {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 6px;
-            border: 1px solid #e0e0e0;
-            margin-bottom: 16px;
-        }
-
-        .time-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 12px;
-        }
-
-        .time-item {
-            text-align: center;
-        }
-
-        .time-label {
-            font-size: 12px;
-            color: #999;
-            margin-bottom: 4px;
-        }
-
-        .time-value {
-            font-size: 24px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        .table th {
-            background: #f9f9f9;
-            padding: 10px;
-            text-align: left;
-            font-weight: 600;
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        .table td {
-            padding: 10px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .table tr:hover {
-            background: #f9f9f9;
-        }
-
-        .total-box {
-            background: #f0f8ff;
-            border: 1px solid #b3d9ff;
-            color: #004085;
-            padding: 12px;
-            border-radius: 6px;
-            margin-top: 16px;
-            font-size: 13px;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.4);
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.show {
-            display: flex;
-        }
-
-        .modal-content {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            max-width: 400px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .modal-content h2 {
-            margin-bottom: 12px;
-            color: #333;
-        }
-
-        .modal-content p {
-            margin-bottom: 20px;
-            color: #666;
-            font-size: 14px;
-        }
-
-        .modal-btn {
-            padding: 10px 20px;
-            margin: 0 5px;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .empty-msg {
-            text-align: center;
-            color: #999;
-            padding: 20px;
-            font-size: 13px;
-        }
-
-        .two-cols {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .two-cols input, .two-cols select {
-            margin-bottom: 0;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background: white; min-height: 100vh; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; }
+        .header h1 { font-size: 24px; margin-bottom: 5px; }
+        .header p { font-size: 13px; opacity: 0.9; }
+        .tabs { display: flex; border-bottom: 2px solid #e0e0e0; background: white; }
+        .tab-btn { flex: 1; padding: 16px; border: none; background: transparent; cursor: pointer; font-size: 14px; font-weight: 600; color: #999; border-bottom: 3px solid transparent; transition: all 0.3s; }
+        .tab-btn.active { color: #667eea; border-bottom-color: #667eea; }
+        .tab-content { display: none; padding: 20px; }
+        .tab-content.active { display: block; }
+        .section { margin-bottom: 24px; }
+        .section-title { font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; margin-bottom: 12px; font-family: inherit; }
+        select:focus, input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+        button { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s; }
+        .btn-primary { background: #667eea; color: white; width: 100%; padding: 14px; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-danger { background: #f8d7da; color: #721c24; }
+        .info-box { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
+        .success-box { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
+        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
+        .emp-name { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+        .time-display { background: #f9f9f9; padding: 20px; border-radius: 6px; border: 1px solid #e0e0e0; margin-bottom: 16px; }
+        .time-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
+        .time-item { text-align: center; }
+        .time-label { font-size: 12px; color: #999; margin-bottom: 4px; }
+        .time-value { font-size: 24px; font-weight: 600; color: #333; }
+        .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .table th { background: #f9f9f9; padding: 10px; text-align: left; font-weight: 600; border-bottom: 2px solid #e0e0e0; }
+        .table td { padding: 10px; border-bottom: 1px solid #e0e0e0; }
+        .total-box { background: #f0f8ff; border: 1px solid #b3d9ff; color: #004085; padding: 12px; border-radius: 6px; margin-top: 16px; font-size: 13px; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background-color: white; padding: 20px; border-radius: 8px; text-align: center; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .two-cols select { margin-bottom: 0; }
+        .empty-msg { text-align: center; color: #999; padding: 20px; }
     </style>
 </head>
 <body>
@@ -347,10 +55,10 @@
         </div>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('employee')">
+            <button class="tab-btn active" onclick="app.switchTab('employee')">
                 <i class="fas fa-user"></i> Well Brand Am
             </button>
-            <button class="tab-btn" onclick="switchTab('admin')">
+            <button class="tab-btn" onclick="app.switchTab('admin')">
                 <i class="fas fa-shield-alt"></i> Admin
             </button>
         </div>
@@ -359,7 +67,7 @@
         <div id="employeeTab" class="tab-content active">
             <div class="section">
                 <div class="section-title">เลือกชื่อของคุณ</div>
-                <select id="empSelect" onchange="loadEmployeeData()">
+                <select id="empSelect" onchange="app.loadEmployeeData()">
                     <option value="">-- เลือกพนักงาน --</option>
                     <option value="1">นัท</option>
                     <option value="2">บี</option>
@@ -370,7 +78,7 @@
 
             <div id="empContent" style="display: none;">
                 <div class="section">
-                    <div class="center-text">
+                    <div style="text-align: center;">
                         <div class="emp-name" id="empName"></div>
                         <p style="color: #999; font-size: 13px;" id="empLocation"></p>
                     </div>
@@ -399,10 +107,10 @@
                 <div class="section">
                     <div id="gpsStatus"></div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                        <button class="btn-primary" id="checkInBtn" onclick="checkIn()" style="background: #28a745;">
+                        <button class="btn-primary" id="checkInBtn" onclick="app.checkIn()" style="background: #28a745;">
                             <i class="fas fa-sign-in-alt"></i> เข้างาน
                         </button>
-                        <button class="btn-primary" id="checkOutBtn" onclick="checkOut()" style="background: #dc3545;">
+                        <button class="btn-primary" id="checkOutBtn" onclick="app.checkOut()" style="background: #dc3545;">
                             <i class="fas fa-sign-out-alt"></i> เลิกงาน
                         </button>
                     </div>
@@ -415,13 +123,13 @@
         <div id="adminTab" class="tab-content">
             <div class="section" id="adminLoginSection">
                 <div class="section-title">ป้อน Password</div>
-                <input type="password" id="adminPassword" placeholder="Enter Password" onkeypress="if(event.key==='Enter') loginAdmin()">
-                <button class="btn-primary" onclick="loginAdmin()">เข้าสู่ระบบ</button>
+                <input type="password" id="adminPassword" placeholder="Enter Password" onkeypress="if(event.key==='Enter') app.loginAdmin()">
+                <button class="btn-primary" onclick="app.loginAdmin()">เข้าสู่ระบบ</button>
             </div>
 
             <div id="adminContent" style="display: none;">
                 <div class="section">
-                    <button class="btn-danger" onclick="logoutAdmin()" style="width: 100%;">ออกจากระบบ</button>
+                    <button class="btn-danger" onclick="app.logoutAdmin()" style="width: 100%;">ออกจากระบบ</button>
                 </div>
 
                 <div class="section">
@@ -429,7 +137,7 @@
                     <div class="two-cols">
                         <div>
                             <label style="font-size: 12px; color: #999; display: block; margin-bottom: 4px;">เลือกพนักงาน</label>
-                            <select id="adminEmpFilter" onchange="loadAdminReport()">
+                            <select id="adminEmpFilter" onchange="app.loadAdminReport()">
                                 <option value="">-- ทั้งหมด --</option>
                                 <option value="1">นัท</option>
                                 <option value="2">บี</option>
@@ -439,7 +147,7 @@
                         </div>
                         <div>
                             <label style="font-size: 12px; color: #999; display: block; margin-bottom: 4px;">เลือกเดือน</label>
-                            <select id="adminMonthFilter" onchange="loadAdminReport()">
+                            <select id="adminMonthFilter" onchange="app.loadAdminReport()">
                                 <option value="">-- ทั้งหมด --</option>
                                 <option value="01">January</option>
                                 <option value="02">February</option>
@@ -460,9 +168,6 @@
 
                 <div class="section">
                     <div class="section-title">รายงาน</div>
-                    <div id="adminReportLoading" class="loading">
-                        <div class="spinner"></div>
-                    </div>
                     <div id="adminReport"></div>
                 </div>
             </div>
@@ -475,399 +180,406 @@
             <h2>❌ นอกพื้นที่</h2>
             <p>ลงเวลาได้ที่โรงพยาบาลเท่านั้น</p>
             <p style="font-size: 12px; color: #666;">ระยะห่าง: <span id="distanceText">0</span> เมตร</p>
-            <button class="btn-primary modal-btn" onclick="closeModal()">ปิด</button>
+            <button class="btn-primary modal-btn" onclick="app.closeModal()">ปิด</button>
         </div>
     </div>
 
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+
     <script>
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCBx80dKWJl79bML0SEeAD7y08EMg_w1H4",
-            authDomain: "attendance-gps-app-3bb33.firebaseapp.com",
-            databaseURL: "https://attendance-gps-app-3bb33-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "attendance-gps-app-3bb33",
-            storageBucket: "attendance-gps-app-3bb33.firebasestorage.app",
-            messagingSenderId: "1039430221322",
-            appId: "1:1039430221322:web:4fab39f8f1b5f4846b29f3"
-        };
+        const app = {
+            // Data
+            employees: {
+                "1": { name: "นัท", location: 1, locationName: "Location 1" },
+                "2": { name: "บี", location: 1, locationName: "Location 1" },
+                "3": { name: "จอย", location: 2, locationName: "Location 2" },
+                "4": { name: "มาย", location: 2, locationName: "Location 2" }
+            },
+            locations: {
+                1: { name: "Location 1", lat: 13.742930940465662, lng: 100.57758168932462, radius: 100 },
+                2: { name: "Location 2", lat: 13.748638810033686, lng: 100.63870881219955, radius: 100 }
+            },
+            currentEmp: null,
+            isAdminLoggedIn: false,
+            database: null,
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+            // Init Firebase
+            initFirebase() {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyCBx80dKWJl79bML0SEeAD7y08EMg_w1H4",
+                    authDomain: "attendance-gps-app-3bb33.firebaseapp.com",
+                    databaseURL: "https://attendance-gps-app-3bb33-default-rtdb.asia-southeast1.firebasedatabase.app",
+                    projectId: "attendance-gps-app-3bb33",
+                    storageBucket: "attendance-gps-app-3bb33.firebasestorage.app",
+                    messagingSenderId: "1039430221322",
+                    appId: "1:1039430221322:web:4fab39f8f1b5f4846b29f3"
+                };
 
-        // Employees Data
-        const employees = {
-            "1": { name: "นัท", location: 1, locationName: "Location 1" },
-            "2": { name: "บี", location: 1, locationName: "Location 1" },
-            "3": { name: "จอย", location: 2, locationName: "Location 2" },
-            "4": { name: "มาย", location: 2, locationName: "Location 2" }
-        };
+                try {
+                    firebase.initializeApp(firebaseConfig);
+                    this.database = firebase.database();
+                    console.log('✓ Firebase initialized');
+                } catch (e) {
+                    console.error('Firebase init error:', e);
+                }
+            },
 
-        // Locations
-        const locations = {
-            1: { name: "Location 1", lat: 13.742930940465662, lng: 100.57758168932462, radius: 100 },
-            2: { name: "Location 2", lat: 13.748638810033686, lng: 100.63870881219955, radius: 100 }
-        };
+            // Tab Switching
+            switchTab(tab) {
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+                
+                document.getElementById(tab + 'Tab').classList.add('active');
+                event.target.classList.add('active');
+            },
 
-        let currentEmp = null;
-        let isAdminLoggedIn = false;
-
-        // Tab Switching
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
-            document.getElementById(tab + 'Tab').classList.add('active');
-            event.target.classList.add('active');
-        }
-
-        // Employee Functions
-        function loadEmployeeData() {
-            const empId = document.getElementById('empSelect').value;
-            if (!empId) {
-                document.getElementById('empContent').style.display = 'none';
-                return;
-            }
-
-            currentEmp = employees[empId];
-            document.getElementById('empName').textContent = currentEmp.name;
-            document.getElementById('empLocation').textContent = currentEmp.locationName;
-            document.getElementById('empContent').style.display = 'block';
-
-            loadTodayData(empId);
-            updateGPSStatus();
-            updateButtonState();
-        }
-
-        function getTodayDate() {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        function loadTodayData(empId) {
-            const today = getTodayDate();
-            database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
-                const data = snapshot.val();
-                if (!data) {
-                    document.getElementById('todayCheckIn').textContent = '-';
-                    document.getElementById('todayCheckOut').textContent = '-';
-                    document.getElementById('todayHours').textContent = '-';
+            // Employee Functions
+            loadEmployeeData() {
+                const empId = document.getElementById('empSelect').value;
+                if (!empId) {
+                    document.getElementById('empContent').style.display = 'none';
                     return;
                 }
 
-                const checkInTime = new Date(data.checkIn).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-                document.getElementById('todayCheckIn').textContent = checkInTime;
+                this.currentEmp = this.employees[empId];
+                document.getElementById('empName').textContent = this.currentEmp.name;
+                document.getElementById('empLocation').textContent = this.currentEmp.locationName;
+                document.getElementById('empContent').style.display = 'block';
 
-                if (data.checkOut) {
-                    const checkOutTime = new Date(data.checkOut).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-                    const hours = ((new Date(data.checkOut) - new Date(data.checkIn)) / (1000 * 60 * 60)).toFixed(2);
-                    document.getElementById('todayCheckOut').textContent = checkOutTime;
-                    document.getElementById('todayHours').textContent = hours + ' ชั่วโมง';
-                } else {
-                    document.getElementById('todayCheckOut').textContent = 'กำลังทำงาน';
-                    document.getElementById('todayHours').textContent = '-';
-                }
-            });
-        }
+                this.loadTodayData(empId);
+                this.updateGPSStatus();
+                this.updateButtonState();
+            },
 
-        function updateGPSStatus() {
-            const statusDiv = document.getElementById('gpsStatus');
-            if (!navigator.geolocation) {
-                statusDiv.innerHTML = '<div class="error-box"><i class="fas fa-exclamation-circle"></i> เบราว์เซอร์ไม่รองรับ GPS</div>';
-                document.getElementById('checkInBtn').disabled = true;
-                return;
-            }
+            getTodayDate() {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            },
 
-            navigator.geolocation.getCurrentPosition((position) => {
-                const { latitude, longitude } = position.coords;
-                const location = locations[currentEmp.location];
-                const distance = calculateDistance(latitude, longitude, location.lat, location.lng);
-
-                if (distance <= location.radius) {
-                    statusDiv.innerHTML = `<div class="success-box"><i class="fas fa-check-circle"></i> ✓ อยู่ในพื้นที่ (${distance.toFixed(0)} เมตร)</div>`;
-                    document.getElementById('checkInBtn').disabled = false;
-                } else {
-                    statusDiv.innerHTML = `<div class="error-box"><i class="fas fa-times-circle"></i> ✗ อยู่นอกพื้นที่ (${distance.toFixed(0)} เมตร)</div>`;
-                    document.getElementById('checkInBtn').disabled = true;
-                }
-            }, () => {
-                statusDiv.innerHTML = '<div class="warning-box"><i class="fas fa-exclamation-circle"></i> ไม่สามารถเข้าถึง GPS (อนุญาต Location?)</div>';
-                document.getElementById('checkInBtn').disabled = true;
-            });
-        }
-
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371000;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-
-        function checkIn() {
-            const empId = document.getElementById('empSelect').value;
-            const btn = document.getElementById('checkInBtn');
-            const msg = document.getElementById('clockMsg');
-
-            btn.disabled = true;
-            msg.style.display = 'block';
-            msg.textContent = '⏳ กำลังตรวจสอบ...';
-            msg.style.color = '#0c5460';
-
-            navigator.geolocation.getCurrentPosition((position) => {
-                const { latitude, longitude } = position.coords;
-                const location = locations[currentEmp.location];
-                const distance = calculateDistance(latitude, longitude, location.lat, location.lng);
-
-                if (distance > location.radius) {
-                    document.getElementById('distanceText').textContent = distance.toFixed(0);
-                    document.getElementById('outOfRangeModal').classList.add('show');
-                    btn.disabled = false;
-                    msg.style.display = 'none';
-                    return;
-                }
-
-                const today = getTodayDate();
-                database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
+            loadTodayData(empId) {
+                if (!this.database) return;
+                const today = this.getTodayDate();
+                this.database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
                     const data = snapshot.val();
-
-                    if (data && data.checkIn) {
-                        msg.textContent = '❌ คุณได้เข้างานแล้ว';
-                        msg.style.color = '#721c24';
-                        btn.disabled = false;
+                    if (!data) {
+                        document.getElementById('todayCheckIn').textContent = '-';
+                        document.getElementById('todayCheckOut').textContent = '-';
+                        document.getElementById('todayHours').textContent = '-';
                         return;
                     }
 
-                    const now = new Date().toISOString();
-                    database.ref(`records/${empId}/${today}`).set({
-                        checkIn: now,
-                        checkOut: null,
-                        location: location.name,
-                        gpsLat: latitude,
-                        gpsLng: longitude
-                    }).then(() => {
-                        msg.textContent = '✓ เข้างานสำเร็จ';
-                        msg.style.color = '#155724';
-                        setTimeout(() => {
-                            loadTodayData(empId);
-                            updateGPSStatus();
-                            updateButtonState();
-                            btn.disabled = false;
-                            msg.style.display = 'none';
-                        }, 1500);
-                    });
-                });
-            }, () => {
-                msg.textContent = '❌ ไม่สามารถเข้าถึง GPS';
-                msg.style.color = '#721c24';
-                btn.disabled = false;
-            });
-        }
-
-        function checkOut() {
-            const empId = document.getElementById('empSelect').value;
-            const btn = document.getElementById('checkOutBtn');
-            const msg = document.getElementById('clockMsg');
-
-            btn.disabled = true;
-            msg.style.display = 'block';
-            msg.textContent = '⏳ กำลังตรวจสอบ...';
-            msg.style.color = '#0c5460';
-
-            navigator.geolocation.getCurrentPosition((position) => {
-                const { latitude, longitude } = position.coords;
-                const location = locations[currentEmp.location];
-                const distance = calculateDistance(latitude, longitude, location.lat, location.lng);
-
-                if (distance > location.radius) {
-                    document.getElementById('distanceText').textContent = distance.toFixed(0);
-                    document.getElementById('outOfRangeModal').classList.add('show');
-                    btn.disabled = false;
-                    msg.style.display = 'none';
-                    return;
-                }
-
-                const today = getTodayDate();
-                database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
-                    const data = snapshot.val();
-
-                    if (!data || !data.checkIn) {
-                        msg.textContent = '❌ กรุณาเข้างานก่อน';
-                        msg.style.color = '#721c24';
-                        btn.disabled = false;
-                        return;
-                    }
+                    const checkInTime = new Date(data.checkIn).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                    document.getElementById('todayCheckIn').textContent = checkInTime;
 
                     if (data.checkOut) {
-                        msg.textContent = '❌ คุณได้เลิกงานแล้ว';
-                        msg.style.color = '#721c24';
+                        const checkOutTime = new Date(data.checkOut).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                        const hours = ((new Date(data.checkOut) - new Date(data.checkIn)) / (1000 * 60 * 60)).toFixed(2);
+                        document.getElementById('todayCheckOut').textContent = checkOutTime;
+                        document.getElementById('todayHours').textContent = hours + ' ชั่วโมง';
+                    } else {
+                        document.getElementById('todayCheckOut').textContent = 'กำลังทำงาน';
+                        document.getElementById('todayHours').textContent = '-';
+                    }
+                });
+            },
+
+            updateGPSStatus() {
+                const statusDiv = document.getElementById('gpsStatus');
+                if (!navigator.geolocation) {
+                    statusDiv.innerHTML = '<div class="error-box"><i class="fas fa-exclamation-circle"></i> เบราว์เซอร์ไม่รองรับ GPS</div>';
+                    document.getElementById('checkInBtn').disabled = true;
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const { latitude, longitude } = position.coords;
+                    const location = this.locations[this.currentEmp.location];
+                    const distance = this.calculateDistance(latitude, longitude, location.lat, location.lng);
+
+                    if (distance <= location.radius) {
+                        statusDiv.innerHTML = `<div class="success-box"><i class="fas fa-check-circle"></i> ✓ อยู่ในพื้นที่ (${distance.toFixed(0)} เมตร)</div>`;
+                        document.getElementById('checkInBtn').disabled = false;
+                    } else {
+                        statusDiv.innerHTML = `<div class="error-box"><i class="fas fa-times-circle"></i> ✗ อยู่นอกพื้นที่ (${distance.toFixed(0)} เมตร)</div>`;
+                        document.getElementById('checkInBtn').disabled = true;
+                    }
+                }, () => {
+                    statusDiv.innerHTML = '<div class="error-box"><i class="fas fa-exclamation-circle"></i> ไม่สามารถเข้าถึง GPS (อนุญาต Location?)</div>';
+                    document.getElementById('checkInBtn').disabled = true;
+                });
+            },
+
+            calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371000;
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                          Math.sin(dLon/2) * Math.sin(dLon/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                return R * c;
+            },
+
+            checkIn() {
+                const empId = document.getElementById('empSelect').value;
+                const btn = document.getElementById('checkInBtn');
+                const msg = document.getElementById('clockMsg');
+
+                btn.disabled = true;
+                msg.style.display = 'block';
+                msg.textContent = '⏳ กำลังตรวจสอบ...';
+                msg.style.color = '#0c5460';
+
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const { latitude, longitude } = position.coords;
+                    const location = this.locations[this.currentEmp.location];
+                    const distance = this.calculateDistance(latitude, longitude, location.lat, location.lng);
+
+                    if (distance > location.radius) {
+                        document.getElementById('distanceText').textContent = distance.toFixed(0);
+                        document.getElementById('outOfRangeModal').classList.add('show');
                         btn.disabled = false;
+                        msg.style.display = 'none';
                         return;
                     }
 
-                    const now = new Date().toISOString();
-                    database.ref(`records/${empId}/${today}`).update({
-                        checkOut: now
-                    }).then(() => {
-                        msg.textContent = '✓ เลิกงานสำเร็จ';
-                        msg.style.color = '#155724';
-                        setTimeout(() => {
-                            loadTodayData(empId);
-                            updateGPSStatus();
-                            updateButtonState();
+                    const today = this.getTodayDate();
+                    this.database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
+                        const data = snapshot.val();
+
+                        if (data && data.checkIn) {
+                            msg.textContent = '❌ คุณได้เข้างานแล้ว';
+                            msg.style.color = '#721c24';
                             btn.disabled = false;
-                            msg.style.display = 'none';
-                        }, 1500);
+                            return;
+                        }
+
+                        const now = new Date().toISOString();
+                        this.database.ref(`records/${empId}/${today}`).set({
+                            checkIn: now,
+                            checkOut: null,
+                            location: location.name,
+                            gpsLat: latitude,
+                            gpsLng: longitude
+                        }).then(() => {
+                            msg.textContent = '✓ เข้างานสำเร็จ';
+                            msg.style.color = '#155724';
+                            setTimeout(() => {
+                                this.loadTodayData(empId);
+                                this.updateGPSStatus();
+                                this.updateButtonState();
+                                btn.disabled = false;
+                                msg.style.display = 'none';
+                            }, 1500);
+                        });
                     });
+                }, () => {
+                    msg.textContent = '❌ ไม่สามารถเข้าถึง GPS';
+                    msg.style.color = '#721c24';
+                    btn.disabled = false;
                 });
-            }, () => {
-                msg.textContent = '❌ ไม่สามารถเข้าถึง GPS';
-                msg.style.color = '#721c24';
-                btn.disabled = false;
-            });
-        }
+            },
 
-        function updateButtonState() {
-            const empId = document.getElementById('empSelect').value;
-            const today = getTodayDate();
-            database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
-                const data = snapshot.val();
-                const checkInBtn = document.getElementById('checkInBtn');
-                const checkOutBtn = document.getElementById('checkOutBtn');
+            checkOut() {
+                const empId = document.getElementById('empSelect').value;
+                const btn = document.getElementById('checkOutBtn');
+                const msg = document.getElementById('clockMsg');
 
-                if (!data || !data.checkIn) {
-                    checkInBtn.disabled = false;
-                    checkOutBtn.disabled = true;
-                } else if (data.checkOut) {
-                    checkInBtn.disabled = true;
-                    checkOutBtn.disabled = true;
+                btn.disabled = true;
+                msg.style.display = 'block';
+                msg.textContent = '⏳ กำลังตรวจสอบ...';
+                msg.style.color = '#0c5460';
+
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const { latitude, longitude } = position.coords;
+                    const location = this.locations[this.currentEmp.location];
+                    const distance = this.calculateDistance(latitude, longitude, location.lat, location.lng);
+
+                    if (distance > location.radius) {
+                        document.getElementById('distanceText').textContent = distance.toFixed(0);
+                        document.getElementById('outOfRangeModal').classList.add('show');
+                        btn.disabled = false;
+                        msg.style.display = 'none';
+                        return;
+                    }
+
+                    const today = this.getTodayDate();
+                    this.database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
+                        const data = snapshot.val();
+
+                        if (!data || !data.checkIn) {
+                            msg.textContent = '❌ กรุณาเข้างานก่อน';
+                            msg.style.color = '#721c24';
+                            btn.disabled = false;
+                            return;
+                        }
+
+                        if (data.checkOut) {
+                            msg.textContent = '❌ คุณได้เลิกงานแล้ว';
+                            msg.style.color = '#721c24';
+                            btn.disabled = false;
+                            return;
+                        }
+
+                        const now = new Date().toISOString();
+                        this.database.ref(`records/${empId}/${today}`).update({
+                            checkOut: now
+                        }).then(() => {
+                            msg.textContent = '✓ เลิกงานสำเร็จ';
+                            msg.style.color = '#155724';
+                            setTimeout(() => {
+                                this.loadTodayData(empId);
+                                this.updateGPSStatus();
+                                this.updateButtonState();
+                                btn.disabled = false;
+                                msg.style.display = 'none';
+                            }, 1500);
+                        });
+                    });
+                }, () => {
+                    msg.textContent = '❌ ไม่สามารถเข้าถึง GPS';
+                    msg.style.color = '#721c24';
+                    btn.disabled = false;
+                });
+            },
+
+            updateButtonState() {
+                const empId = document.getElementById('empSelect').value;
+                const today = this.getTodayDate();
+                this.database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
+                    const data = snapshot.val();
+                    const checkInBtn = document.getElementById('checkInBtn');
+                    const checkOutBtn = document.getElementById('checkOutBtn');
+
+                    if (!data || !data.checkIn) {
+                        checkInBtn.disabled = false;
+                        checkOutBtn.disabled = true;
+                    } else if (data.checkOut) {
+                        checkInBtn.disabled = true;
+                        checkOutBtn.disabled = true;
+                    } else {
+                        checkInBtn.disabled = true;
+                        checkOutBtn.disabled = false;
+                    }
+                });
+            },
+
+            closeModal() {
+                document.getElementById('outOfRangeModal').classList.remove('show');
+            },
+
+            // Admin Functions
+            loginAdmin() {
+                const password = document.getElementById('adminPassword').value;
+                if (password === 'LookAeyCode6') {
+                    this.isAdminLoggedIn = true;
+                    document.getElementById('adminLoginSection').style.display = 'none';
+                    document.getElementById('adminContent').style.display = 'block';
+                    this.loadAdminReport();
                 } else {
-                    checkInBtn.disabled = true;
-                    checkOutBtn.disabled = false;
+                    alert('❌ Password ไม่ถูกต้อง');
+                    document.getElementById('adminPassword').value = '';
                 }
-            });
-        }
+            },
 
-        function closeModal() {
-            document.getElementById('outOfRangeModal').classList.remove('show');
-        }
-
-        // Admin Functions
-        function loginAdmin() {
-            const password = document.getElementById('adminPassword').value;
-            if (password === 'LookAeyCode6') {
-                isAdminLoggedIn = true;
-                document.getElementById('adminLoginSection').style.display = 'none';
-                document.getElementById('adminContent').style.display = 'block';
-                loadAdminReport();
-            } else {
-                alert('❌ Password ไม่ถูกต้อง');
+            logoutAdmin() {
+                this.isAdminLoggedIn = false;
+                document.getElementById('adminLoginSection').style.display = 'block';
+                document.getElementById('adminContent').style.display = 'none';
                 document.getElementById('adminPassword').value = '';
-            }
-        }
+            },
 
-        function logoutAdmin() {
-            isAdminLoggedIn = false;
-            document.getElementById('adminLoginSection').style.display = 'block';
-            document.getElementById('adminContent').style.display = 'none';
-            document.getElementById('adminPassword').value = '';
-        }
+            loadAdminReport() {
+                if (!this.isAdminLoggedIn || !this.database) return;
 
-        function loadAdminReport() {
-            if (!isAdminLoggedIn) return;
+                const empFilter = document.getElementById('adminEmpFilter').value;
+                const monthFilter = document.getElementById('adminMonthFilter').value;
 
-            const empFilter = document.getElementById('adminEmpFilter').value;
-            const monthFilter = document.getElementById('adminMonthFilter').value;
+                this.database.ref('records').once('value', (snapshot) => {
+                    const allData = snapshot.val() || {};
+                    let html = '';
+                    let totalHours = 0;
+                    let totalDays = 0;
 
-            document.getElementById('adminReportLoading').style.display = 'block';
-            document.getElementById('adminReport').innerHTML = '';
+                    for (let empId in allData) {
+                        if (empFilter && empId !== empFilter) continue;
+                        if (!this.employees[empId]) continue;
 
-            database.ref('records').once('value', (snapshot) => {
-                document.getElementById('adminReportLoading').style.display = 'none';
-                const allData = snapshot.val() || {};
-                let html = '';
-                let totalHours = 0;
-                let totalDays = 0;
+                        const empData = allData[empId];
+                        let empTotalHours = 0;
+                        let empTotalDays = 0;
+                        let empHtml = '';
 
-                for (let empId in allData) {
-                    if (empFilter && empId !== empFilter) continue;
-                    if (!employees[empId]) continue;
+                        for (let date in empData) {
+                            if (monthFilter && !date.includes(`-${monthFilter}-`)) continue;
 
-                    const empData = allData[empId];
-                    let empTotalHours = 0;
-                    let empTotalDays = 0;
-                    let empHtml = '';
+                            const record = empData[date];
+                            if (!record.checkOut) continue;
 
-                    for (let date in empData) {
-                        if (monthFilter && !date.includes(`-${monthFilter}-`)) continue;
+                            const hours = ((new Date(record.checkOut) - new Date(record.checkIn)) / (1000 * 60 * 60)).toFixed(2);
+                            const checkInTime = new Date(record.checkIn).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                            const checkOutTime = new Date(record.checkOut).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
-                        const record = empData[date];
-                        if (!record.checkOut) continue;
+                            empHtml += `
+                                <tr>
+                                    <td>${date}</td>
+                                    <td>${record.location}</td>
+                                    <td>${checkInTime}</td>
+                                    <td>${checkOutTime}</td>
+                                    <td>${hours}</td>
+                                </tr>
+                            `;
+                            empTotalHours += parseFloat(hours);
+                            empTotalDays++;
+                            totalHours += parseFloat(hours);
+                            totalDays++;
+                        }
 
-                        const hours = ((new Date(record.checkOut) - new Date(record.checkIn)) / (1000 * 60 * 60)).toFixed(2);
-                        const checkInTime = new Date(record.checkIn).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-                        const checkOutTime = new Date(record.checkOut).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-
-                        empHtml += `
-                            <tr>
-                                <td>${date}</td>
-                                <td>${record.location}</td>
-                                <td>${checkInTime}</td>
-                                <td>${checkOutTime}</td>
-                                <td>${hours}</td>
-                            </tr>
-                        `;
-                        empTotalHours += parseFloat(hours);
-                        empTotalDays++;
-                        totalHours += parseFloat(hours);
-                        totalDays++;
-                    }
-
-                    if (empHtml) {
-                        html += `
-                            <div style="margin-bottom: 24px;">
-                                <h3 style="font-size: 16px; margin-bottom: 12px;">${employees[empId].name}</h3>
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>วันที่</th>
-                                            <th>Location</th>
-                                            <th>เข้า</th>
-                                            <th>ออก</th>
-                                            <th>ชั่วโมง</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>${empHtml}</tbody>
-                                </table>
-                                <div class="total-box">
-                                    <strong>รวม:</strong> ${empTotalHours.toFixed(2)} ชั่วโมง (${empTotalDays} วัน)
+                        if (empHtml) {
+                            html += `
+                                <div style="margin-bottom: 24px;">
+                                    <h3 style="font-size: 16px; margin-bottom: 12px;">${this.employees[empId].name}</h3>
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>วันที่</th>
+                                                <th>Location</th>
+                                                <th>เข้า</th>
+                                                <th>ออก</th>
+                                                <th>ชั่วโมง</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>${empHtml}</tbody>
+                                    </table>
+                                    <div class="total-box">
+                                        <strong>รวม:</strong> ${empTotalHours.toFixed(2)} ชั่วโมง (${empTotalDays} วัน)
+                                    </div>
                                 </div>
-                            </div>
-                        `;
+                            `;
+                        }
                     }
-                }
 
-                if (html) {
-                    html = `
-                        <div class="info-box">
-                            <strong>รวมทั้งหมด:</strong> ${totalHours.toFixed(2)} ชั่วโมง (${totalDays} วัน)
-                        </div>
-                    ` + html;
-                    document.getElementById('adminReport').innerHTML = html;
-                } else {
-                    document.getElementById('adminReport').innerHTML = '<div class="empty-msg">ไม่มีข้อมูล</div>';
-                }
-            });
-        }
+                    if (html) {
+                        html = `
+                            <div class="info-box">
+                                <strong>รวมทั้งหมด:</strong> ${totalHours.toFixed(2)} ชั่วโมง (${totalDays} วัน)
+                            </div>
+                        ` + html;
+                        document.getElementById('adminReport').innerHTML = html;
+                    } else {
+                        document.getElementById('adminReport').innerHTML = '<div class="empty-msg">ไม่มีข้อมูล</div>';
+                    }
+                });
+            }
+        };
 
-        // Initialize
-        console.log('✓ Firebase connected');
+        // Init
+        app.initFirebase();
         console.log('✓ App ready');
     </script>
 </body>
