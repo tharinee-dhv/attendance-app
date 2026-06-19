@@ -3,127 +3,872 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPS Time Attendance Pro</title>
-    <script src="https://tailwindcss.com"></script>
+    <title>Attendance GPS System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e0e0e0;
+            background: white;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #999;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            font-family: inherit;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            width: 100%;
+            padding: 14px;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .btn-danger:hover {
+            background: #f5c6cb;
+        }
+
+        .info-box {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .error-box {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .center-text {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .emp-name {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .time-display {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 16px;
+        }
+
+        .time-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .time-item {
+            text-align: center;
+        }
+
+        .time-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .time-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .table th {
+            background: #f9f9f9;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .table td {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .total-box {
+            background: #f0f8ff;
+            border: 1px solid #b3d9ff;
+            color: #004085;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 16px;
+            font-size: 13px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .modal-content p {
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            margin: 0 5px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-msg {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-size: 13px;
+        }
+
+        .two-cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .two-cols input, .two-cols select {
+            margin-bottom: 0;
+        }
+    </style>
 </head>
-<body class="bg-slate-900 font-sans min-h-screen p-4 flex flex-col items-center justify-start text-slate-100">
-    <div class="w-full max-w-xl bg-slate-800 rounded-2xl shadow-2xl mt-4 border border-slate-700 overflow-hidden">
-        <div class="flex border-b border-slate-700 bg-slate-850">
-            <button id="tabEmpBtn" onclick="switchTab('employee')" class="flex-1 py-4 text-center text-sm font-bold border-b-2 border-indigo-500 bg-slate-800 text-indigo-400">👤 พนักงาน (Employee)</button>
-            <button id="tabAdminBtn" onclick="switchTab('admin')" class="flex-1 py-4 text-center text-sm font-bold border-b-2 border-transparent text-slate-400 hover:bg-slate-700/50">🔑 ผู้ดูแลระบบ (Admin)</button>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🕐 Attendance GPS System</h1>
+            <p>Well Brand Am Hospital</p>
         </div>
-        <div class="p-6">
-            <div id="locationPermissionWarning" class="hidden mb-5 bg-amber-950/80 border border-amber-800 text-amber-300 p-4 rounded-xl text-xs space-y-2">
-                <p class="font-bold text-sm">⚠️ โปรดเปิดตำแหน่งที่ตั้ง (Location GPS)</p>
-                <p>ระบบตรวจพบว่าคุณยังไม่ได้อนุญาตให้เว็บเข้าถึงพิกัดตำแหน่ง หรือยังไม่ได้เปิดระบบ GPS บนมือถือ</p>
-                <p class="text-slate-400 font-medium">💡 วิธีแก้ไข: กดไอคอนรูปแม่กุญแจ 🔒 ที่แถบกรอกลิงก์ด้านบนสุด เลือก "อนุญาต (Allow)" แล้วรีเฟรชหน้าจอครับ</p>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('employee')">
+                <i class="fas fa-user"></i> Well Brand Am
+            </button>
+            <button class="tab-btn" onclick="switchTab('admin')">
+                <i class="fas fa-shield-alt"></i> Admin
+            </button>
+        </div>
+
+        <!-- TAB 1: Employee -->
+        <div id="employeeTab" class="tab-content active">
+            <div class="section">
+                <div class="section-title">เลือกชื่อของคุณ</div>
+                <select id="empSelect" onchange="loadEmployeeData()">
+                    <option value="">-- เลือกพนักงาน --</option>
+                    <option value="1">นัท</option>
+                    <option value="2">บี</option>
+                    <option value="3">จอย</option>
+                    <option value="4">มาย</option>
+                </select>
             </div>
-            <div id="employeeTabContent" class="space-y-4">
-                <div class="bg-slate-700 p-3 rounded-xl">
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">เลือกชื่อของคุณ</label>
-                    <select id="userSelect" onchange="handleUserSwitch()" class="w-full bg-slate-800 border border-slate-600 text-slate-100 text-sm rounded-lg p-3 focus:outline-none">
-                        <option value="" disabled selected>-- กรุณาเลือกชื่อของคุณ --</option>
-                        <option value="nut">A: นัท</option><option value="bee">B: บี</option><option value="joy">C: จอย</option><option value="mild">D: มาย</option>
-                    </select>
+
+            <div id="empContent" style="display: none;">
+                <div class="section">
+                    <div class="center-text">
+                        <div class="emp-name" id="empName"></div>
+                        <p style="color: #999; font-size: 13px;" id="empLocation"></p>
+                    </div>
                 </div>
-                <div id="employeeActionZone" class="hidden space-y-4">
-                    <div class="p-4 bg-slate-700/50 rounded-xl text-center border border-slate-600">
-                        <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider">พิกัดสถานที่ปฏิบัติงานที่กำหนดไว้</p>
-                        <p id="targetCoords" class="text-sm font-mono font-bold text-indigo-400 mt-1">-</p>
+
+                <div class="section">
+                    <div class="section-title">วันนี้ (Today)</div>
+                    <div class="time-display">
+                        <div class="time-row">
+                            <div class="time-item">
+                                <div class="time-label">เข้า (Check In)</div>
+                                <div class="time-value" id="todayCheckIn">-</div>
+                            </div>
+                            <div class="time-item">
+                                <div class="time-label">ออก (Check Out)</div>
+                                <div class="time-value" id="todayCheckOut">-</div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; border-top: 1px solid #e0e0e0; padding-top: 12px;">
+                            <div class="time-label">ชั่วโมงทำงาน</div>
+                            <div class="time-value" id="todayHours">-</div>
+                        </div>
                     </div>
-                    <div class="flex gap-4">
-                        <button id="btnClockIn" onclick="triggerGPSCheck('Clock In')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition-all">📥 Clock In</button>
-                        <button id="btnClockOut" onclick="triggerGPSCheck('Clock Out')" class="flex-1 bg-rose-600 hover:bg-rose-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition-all">📤 Clock Out</button>
+                </div>
+
+                <div class="section">
+                    <div id="gpsStatus"></div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <button class="btn-primary" id="checkInBtn" onclick="checkIn()" style="background: #28a745;">
+                            <i class="fas fa-sign-in-alt"></i> เข้างาน
+                        </button>
+                        <button class="btn-primary" id="checkOutBtn" onclick="checkOut()" style="background: #dc3545;">
+                            <i class="fas fa-sign-out-alt"></i> เลิกงาน
+                        </button>
                     </div>
-                    <div id="gpsLoadingStatus" class="text-xs text-slate-400 bg-slate-700 p-3 rounded-lg border border-slate-600 text-center hidden"></div>
-                    <div class="mt-6 border-t border-slate-700 pt-4">
-                        <h3 class="text-sm font-bold text-slate-300 mb-2">⏱️ ประวัติการลงเวลาของคุณวันนี้</h3>
-                        <div class="bg-slate-900 rounded-xl p-3 text-xs text-slate-400 space-y-2" id="empTodayLogs"></div>
-                    </div>
+                    <div id="clockMsg" style="margin-top: 12px; text-align: center; display: none;"></div>
                 </div>
             </div>
-            <div id="adminTabContent" class="hidden space-y-4">
-                <div id="adminAuthZone" class="bg-slate-700 p-4 rounded-xl border border-slate-600 space-y-3">
-                    <h3 class="text-sm font-bold text-indigo-300">🔐 กรุณาใส่รหัสผ่านผู้ดูแลระบบ</h3>
-                    <div class="flex gap-2">
-                        <input type="password" id="adminPassword" placeholder="ใส่รหัสผ่านที่นี่..." class="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none">
-                        <button onclick="verifyAdminPassword()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-4 py-2 rounded-lg">ยืนยัน</button>
-                    </div>
-                    <p class="text-[11px] text-slate-400">*รหัสผ่านคือ: admin1234</p>
+        </div>
+
+        <!-- TAB 2: Admin -->
+        <div id="adminTab" class="tab-content">
+            <div class="section" id="adminLoginSection">
+                <div class="section-title">ป้อน Password</div>
+                <input type="password" id="adminPassword" placeholder="Enter Password" onkeypress="if(event.key==='Enter') loginAdmin()">
+                <button class="btn-primary" onclick="loginAdmin()">เข้าสู่ระบบ</button>
+            </div>
+
+            <div id="adminContent" style="display: none;">
+                <div class="section">
+                    <button class="btn-danger" onclick="logoutAdmin()" style="width: 100%;">ออกจากระบบ</button>
                 </div>
-                <div id="adminDashboardZone" class="hidden space-y-4 w-full">
-                    <div class="flex justify-between items-center border-b border-slate-700 pb-3">
-                        <h2 class="text-sm font-bold text-slate-200">📊 สถิติผู้ดูแลระบบ</h2>
-                        <button onclick="clearAllData()" class="text-[11px] bg-red-900/40 text-red-400 border border-red-800 px-2 py-1 rounded">ล้างข้อมูลทั้งหมด</button>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 bg-slate-700 p-3 rounded-xl border border-slate-600">
+
+                <div class="section">
+                    <div class="section-title">ตัวกรอง</div>
+                    <div class="two-cols">
                         <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">รายชื่อพนักงาน</label>
-                            <select id="adminFilterUser" onchange="loadAdminDashboard()" class="w-full bg-slate-800 border border-slate-600 text-xs text-white rounded-md p-2">
-                                <option value="all">ดูพนักงานทุกคน</option><option value="นัท">นัท</option><option value="บี">บี</option><option value="จอย">จอย</option><option value="มาย">มาย</option>
+                            <label style="font-size: 12px; color: #999; display: block; margin-bottom: 4px;">เลือกพนักงาน</label>
+                            <select id="adminEmpFilter" onchange="loadAdminReport()">
+                                <option value="">-- ทั้งหมด --</option>
+                                <option value="1">นัท</option>
+                                <option value="2">บี</option>
+                                <option value="3">จอย</option>
+                                <option value="4">มาย</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-[11px] text-slate-400 mb-1">เลือกเดือน/ปี</label>
-                            <input type="month" id="adminFilterMonth" onchange="loadAdminDashboard()" class="w-full bg-slate-800 border border-slate-600 text-xs text-white rounded-md p-2">
+                            <label style="font-size: 12px; color: #999; display: block; margin-bottom: 4px;">เลือกเดือน</label>
+                            <select id="adminMonthFilter" onchange="loadAdminReport()">
+                                <option value="">-- ทั้งหมด --</option>
+                                <option value="01">January</option>
+                                <option value="02">February</option>
+                                <option value="03">March</option>
+                                <option value="04">April</option>
+                                <option value="05">May</option>
+                                <option value="06">June</option>
+                                <option value="07">July</option>
+                                <option value="08">August</option>
+                                <option value="09">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
                         </div>
                     </div>
-                    <div class="bg-indigo-600 text-white p-4 rounded-xl flex justify-between items-center shadow-lg">
-                        <div>
-                            <p class="text-[10px] opacity-80 uppercase font-semibold">สรุปเวลาทำงานสะสมที่เลือก</p>
-                            <p id="adminTotalHours" class="text-2xl font-bold mt-1">0.0 ชั่วโมง</p>
-                        </div>
-                        <span class="text-2xl">💼</span>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">รายงาน</div>
+                    <div id="adminReportLoading" class="loading">
+                        <div class="spinner"></div>
                     </div>
-                    <div>
-                        <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">📋 ตารางบันทึกสำเร็จ</h3>
-                        <div class="overflow-x-auto border border-slate-700 rounded-xl shadow-sm">
-                            <table class="w-full text-[11px] text-left text-slate-300 bg-slate-800">
-                                <thead class="text-slate-400 uppercase bg-slate-700/50 border-b border-slate-700">
-                                    <tr><th class="py-2 px-2.5">วันที่</th><th class="py-2 px-2.5">ชื่อ</th><th class="py-2 px-2.5">สถานะ</th><th class="py-2 px-2.5">เวลา</th><th class="py-2 px-2.5">ระยะ</th></tr>
-                                </thead>
-                                <tbody id="adminSuccessLogBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="pt-2">
-                        <h3 class="text-[11px] font-bold text-rose-400 uppercase tracking-wider mb-2">⚠️ ประวัติกดนอกพื้นที่ (Log Attempts)</h3>
-                        <div class="overflow-x-auto border border-rose-950 rounded-xl shadow-sm">
-                            <table class="w-full text-[11px] text-left text-rose-300 bg-slate-800">
-                                <thead class="text-rose-400 uppercase bg-rose-950/40 border-b border-rose-900">
-                                    <tr><th class="py-2 px-2.5">วันที่/เวลา</th><th class="py-2 px-2.5">ชื่อ</th><th class="py-2 px-2.5">พิกัดจริงที่ตรวจจับได้</th><th class="py-2 px-2.5">ห่าง (ม.)</th></tr>
-                                </thead>
-                                <tbody id="adminFailLogBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div id="adminReport"></div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Modal for Out of Range -->
+    <div id="outOfRangeModal" class="modal">
+        <div class="modal-content">
+            <h2>❌ นอกพื้นที่</h2>
+            <p>ลงเวลาได้ที่โรงพยาบาลเท่านั้น</p>
+            <p style="font-size: 12px; color: #666;">ระยะห่าง: <span id="distanceText">0</span> เมตร</p>
+            <button class="btn-primary modal-btn" onclick="closeModal()">ปิด</button>
+        </div>
+    </div>
+
     <script>
-        const cf = {
-            nut: { name: "นัท", lat: 13.742931, lng: 100.577582 },
-            bee: { name: "บี", lat: 13.742931, lng: 100.577582 },
-            joy: { name: "จอย", lat: 13.748639, lng: 100.638709 },
-            mild: { name: "มาย", lat: 13.748639, lng: 100.638709 }
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCBx80dKWJl79bML0SEeAD7y08EMg_w1H4",
+            authDomain: "attendance-gps-app-3bb33.firebaseapp.com",
+            databaseURL: "https://attendance-gps-app-3bb33-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "attendance-gps-app-3bb33",
+            storageBucket: "attendance-gps-app-3bb33.firebasestorage.app",
+            messagingSenderId: "1039430221322",
+            appId: "1:1039430221322:web:4fab39f8f1b5f4846b29f3"
         };
-        let auth = false;
-        window.onload = function() {
-            const t = new Date();
-            document.getElementById('adminFilterMonth').value = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`;
-            chkGPS();
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Employees Data
+        const employees = {
+            "1": { name: "นัท", location: 1, locationName: "Location 1" },
+            "2": { name: "บี", location: 1, locationName: "Location 1" },
+            "3": { name: "จอย", location: 2, locationName: "Location 2" },
+            "4": { name: "มาย", location: 2, locationName: "Location 2" }
         };
-        function switchTab(n) {
-            const bE = document.getElementById('tabEmpBtn'), bA = document.getElementById('tabAdminBtn');
-            const cE = document.getElementById('employeeTabContent'), cA = document.getElementById('adminTabContent');
-            if (n === 'employee') {
-                bE.className = "flex-1 py-4 text-center text-sm font-bold border-b-2 border-indigo-500 bg-slate-800 text-indigo-400";
-                bA.className = "flex-1 py-4 text-center text-sm font-bold border-b-2 border-transparent text-slate-400 hover:bg-slate-700/50";
-                cE.classList.remove('hidden'); cA.classList.add('hidden'); chkGPS();
+
+        // Locations
+        const locations = {
+            1: { name: "Location 1", lat: 13.742930940465662, lng: 100.57758168932462, radius: 100 },
+            2: { name: "Location 2", lat: 13.748638810033686, lng: 100.63870881219955, radius: 100 }
+        };
+
+        let currentEmp = null;
+        let isAdminLoggedIn = false;
+
+        // Tab Switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tab + 'Tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Employee Functions
+        function loadEmployeeData() {
+            const empId = document.getElementById('empSelect').value;
+            if (!empId) {
+                document.getElementById('empContent').style.display = 'none';
+                return;
+            }
+
+            currentEmp = employees[empId];
+            document.getElementById('empName').textContent = currentEmp.name;
+            document.getElementById('empLocation').textContent = currentEmp.locationName;
+            document.getElementById('empContent').style.display = 'block';
+
+            loadTodayData(empId);
+            updateGPSStatus();
+            updateButtonState();
+        }
+
+        function getTodayDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function loadTodayData(empId) {
+            const today = getTodayDate();
+            database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) {
+                    document.getElementById('todayCheckIn').textContent = '-';
+                    document.getElementById('todayCheckOut').textContent = '-';
+                    document.getElementById('todayHours').textContent = '-';
+                    return;
+                }
+
+                const checkInTime = new Date(data.checkIn).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('todayCheckIn').textContent = checkInTime;
+
+                if (data.checkOut) {
+                    const checkOutTime = new Date(data.checkOut).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                    const hours = ((new Date(data.checkOut) - new Date(data.checkIn)) / (1000 * 60 * 60)).toFixed(2);
+                    document.getElementById('todayCheckOut').textContent = checkOutTime;
+                    document.getElementById('todayHours').textContent = hours + ' ชั่วโมง';
+                } else {
+                    document.getElementById('todayCheckOut').textContent = 'กำลังทำงาน';
+                    document.getElementById('todayHours').textContent = '-';
+                }
+            });
+        }
+
+        function updateGPSStatus() {
+            const statusDiv = document.getElementById('gpsStatus');
+            if (!navigator.geolocation) {
+                statusDiv.innerHTML = '<div class="error-box"><i class="fas fa-exclamation-circle"></i> เบราว์เซอร์ไม่รองรับ GPS</div>';
+                document.getElementById('checkInBtn').disabled = true;
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition((position) => {
+                const { latitude, longitude } = position.coords;
+                const location = locations[currentEmp.location];
+                const distance = calculateDistance(latitude, longitude, location.lat, location.lng);
+
+                if (distance <= location.radius) {
+                    statusDiv.innerHTML = `<div class="success-box"><i class="fas fa-check-circle"></i> ✓ อยู่ในพื้นที่ (${distance.toFixed(0)} เมตร)</div>`;
+                    document.getElementById('checkInBtn').disabled = false;
+                } else {
+                    statusDiv.innerHTML = `<div class="error-box"><i class="fas fa-times-circle"></i> ✗ อยู่นอกพื้นที่ (${distance.toFixed(0)} เมตร)</div>`;
+                    document.getElementById('checkInBtn').disabled = true;
+                }
+            }, () => {
+                statusDiv.innerHTML = '<div class="warning-box"><i class="fas fa-exclamation-circle"></i> ไม่สามารถเข้าถึง GPS (อนุญาต Location?)</div>';
+                document.getElementById('checkInBtn').disabled = true;
+            });
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function checkIn() {
+            const empId = document.getElementById('empSelect').value;
+            const btn = document.getElementById('checkInBtn');
+            const msg = document.getElementById('clockMsg');
+
+            btn.disabled = true;
+            msg.style.display = 'block';
+            msg.textContent = '⏳ กำลังตรวจสอบ...';
+            msg.style.color = '#0c5460';
+
+            navigator.geolocation.getCurrentPosition((position) => {
+                const { latitude, longitude } = position.coords;
+                const location = locations[currentEmp.location];
+                const distance = calculateDistance(latitude, longitude, location.lat, location.lng);
+
+                if (distance > location.radius) {
+                    document.getElementById('distanceText').textContent = distance.toFixed(0);
+                    document.getElementById('outOfRangeModal').classList.add('show');
+                    btn.disabled = false;
+                    msg.style.display = 'none';
+                    return;
+                }
+
+                const today = getTodayDate();
+                database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
+                    const data = snapshot.val();
+
+                    if (data && data.checkIn) {
+                        msg.textContent = '❌ คุณได้เข้างานแล้ว';
+                        msg.style.color = '#721c24';
+                        btn.disabled = false;
+                        return;
+                    }
+
+                    const now = new Date().toISOString();
+                    database.ref(`records/${empId}/${today}`).set({
+                        checkIn: now,
+                        checkOut: null,
+                        location: location.name,
+                        gpsLat: latitude,
+                        gpsLng: longitude
+                    }).then(() => {
+                        msg.textContent = '✓ เข้างานสำเร็จ';
+                        msg.style.color = '#155724';
+                        setTimeout(() => {
+                            loadTodayData(empId);
+                            updateGPSStatus();
+                            updateButtonState();
+                            btn.disabled = false;
+                            msg.style.display = 'none';
+                        }, 1500);
+                    });
+                });
+            }, () => {
+                msg.textContent = '❌ ไม่สามารถเข้าถึง GPS';
+                msg.style.color = '#721c24';
+                btn.disabled = false;
+            });
+        }
+
+        function checkOut() {
+            const empId = document.getElementById('empSelect').value;
+            const btn = document.getElementById('checkOutBtn');
+            const msg = document.getElementById('clockMsg');
+
+            btn.disabled = true;
+            msg.style.display = 'block';
+            msg.textContent = '⏳ กำลังตรวจสอบ...';
+            msg.style.color = '#0c5460';
+
+            navigator.geolocation.getCurrentPosition((position) => {
+                const { latitude, longitude } = position.coords;
+                const location = locations[currentEmp.location];
+                const distance = calculateDistance(latitude, longitude, location.lat, location.lng);
+
+                if (distance > location.radius) {
+                    document.getElementById('distanceText').textContent = distance.toFixed(0);
+                    document.getElementById('outOfRangeModal').classList.add('show');
+                    btn.disabled = false;
+                    msg.style.display = 'none';
+                    return;
+                }
+
+                const today = getTodayDate();
+                database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
+                    const data = snapshot.val();
+
+                    if (!data || !data.checkIn) {
+                        msg.textContent = '❌ กรุณาเข้างานก่อน';
+                        msg.style.color = '#721c24';
+                        btn.disabled = false;
+                        return;
+                    }
+
+                    if (data.checkOut) {
+                        msg.textContent = '❌ คุณได้เลิกงานแล้ว';
+                        msg.style.color = '#721c24';
+                        btn.disabled = false;
+                        return;
+                    }
+
+                    const now = new Date().toISOString();
+                    database.ref(`records/${empId}/${today}`).update({
+                        checkOut: now
+                    }).then(() => {
+                        msg.textContent = '✓ เลิกงานสำเร็จ';
+                        msg.style.color = '#155724';
+                        setTimeout(() => {
+                            loadTodayData(empId);
+                            updateGPSStatus();
+                            updateButtonState();
+                            btn.disabled = false;
+                            msg.style.display = 'none';
+                        }, 1500);
+                    });
+                });
+            }, () => {
+                msg.textContent = '❌ ไม่สามารถเข้าถึง GPS';
+                msg.style.color = '#721c24';
+                btn.disabled = false;
+            });
+        }
+
+        function updateButtonState() {
+            const empId = document.getElementById('empSelect').value;
+            const today = getTodayDate();
+            database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
+                const data = snapshot.val();
+                const checkInBtn = document.getElementById('checkInBtn');
+                const checkOutBtn = document.getElementById('checkOutBtn');
+
+                if (!data || !data.checkIn) {
+                    checkInBtn.disabled = false;
+                    checkOutBtn.disabled = true;
+                } else if (data.checkOut) {
+                    checkInBtn.disabled = true;
+                    checkOutBtn.disabled = true;
+                } else {
+                    checkInBtn.disabled = true;
+                    checkOutBtn.disabled = false;
+                }
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('outOfRangeModal').classList.remove('show');
+        }
+
+        // Admin Functions
+        function loginAdmin() {
+            const password = document.getElementById('adminPassword').value;
+            if (password === 'LookAeyCode6') {
+                isAdminLoggedIn = true;
+                document.getElementById('adminLoginSection').style.display = 'none';
+                document.getElementById('adminContent').style.display = 'block';
+                loadAdminReport();
             } else {
-                bA.className = "flex-1 py-4 text-center text-sm font-bold border-b-2 border-indigo-500 bg-slate-800 text-indigo-400";
-bE.className = "flex-1 py-4 text-center text-sm font-bold border-b-2 border-transparent text-slate-400 hover:bg-slate-700/50";cE.classList.add('hidden'); cA.classList.remove('hidden');if (auth) { document.getElementById('adminAuthZone').classList.add('hidden'); document.getElementById('adminDashboardZone').classList.remove('hidden'); loadAdminDashboard(); }else { document.getElementById('adminAuthZone').classList.remove('hidden'); document.getElementById('adminDashboardZone').classList.add('hidden'); }}}function chkGPS() {if (!navigator.geolocation) { showW(true); return; }navigator.geolocation.getCurrentPosition(() => showW(false), () => showW(true), { timeout: 2000 });}function showW(s) {document.getElementById('locationPermissionWarning').classList.toggle('hidden', !s);const b1 = document.getElementById('btnClockIn'), b2 = document.getElementById('btnClockOut');if(b1 && b2) { b1.disabled = s; b2.disabled = s; }}function handleUserSwitch() {const k = document.getElementById('userSelect').value;document.getElementById('employeeActionZone').classList.toggle('hidden', !k);if (k) { document.getElementById('targetCoords').innerText = ${cf[k].lat.toFixed(6)}, ${cf[k].lng.toFixed(6)}; renderEmp(cf[k].name); }}function verifyAdminPassword() {if (document.getElementById('adminPassword').value === 'admin1234') { auth = true; document.getElementById('adminAuthZone').classList.add('hidden'); document.getElementById('adminDashboardZone').classList.remove('hidden'); loadAdminDashboard(); }else alert('❌ รหัสผ่านไม่ถูกต้อง');}function triggerGPSCheck(act) {const u = cf[document.getElementById('userSelect').value], ls = document.getElementById('gpsLoadingStatus');ls.innerText = "⏳ กำลังเชื่อมต่อสัญญาณ GPS..."; ls.classList.remove('hidden');navigator.geolocation.getCurrentPosition((pos) => {ls.classList.add('hidden'); showW(false);const d = getDist(pos.coords.latitude, pos.coords.longitude, u.lat, u.lng);if (d <= 100) { saveL(u.name, act, d, true, pos.coords.latitude, pos.coords.longitude); alert(✅ บันทึก ${act} สำเร็จ! ห่าง ${Math.round(d)} เมตร); renderEmp(u.name); }else { saveL(u.name, act, d, false, pos.coords.latitude, pos.coords.longitude); alert(❌ ล้มเหลว! อยู่นอกพื้นที่ทำงาน (ห่าง ${Math.round(d)} ม. / ห้ามเกิน 100 ม.)); }}, () => { ls.classList.add('hidden'); showW(true); alert("❌ กรุณาเปิดระบบ Location บนอุปกรณ์ของคุณก่อนนะครับ"); }, { enableHighAccuracy: true, timeout: 12000 });}function getDist(la1, lo1, la2, lo2) {const R = 6371e3, p1 = la1 * Math.PI / 180, p2 = la2 * Math.PI / 180, dLat = (la2 - la1) * Math.PI / 180, dLon = (lo2 - lo1) * Math.PI / 180;const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dLon/2) * Math.sin(dLon/2);return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));}function saveL(n, t, d, s, al, ag) {let l = JSON.parse(localStorage.getItem('gps_v3')) || []; const now = new Date();l.unshift({ name: n, type: t, dDate: now.toLocaleDateString('th-TH'), dTime: now.toLocaleTimeString('th-TH'), rIso: now.toISOString(), dist: Math.round(d), isS: s, aLt: al.toFixed(6), aLg: ag.toFixed(6) });localStorage.setItem('gps_v3', JSON.stringify(l));}function renderEmp(en) {const l = JSON.parse(localStorage.getItem('gps_v3')) || [], c = document.getElementById('empTodayLogs'); c.innerHTML = '';const rec = l.filter(i => i.name === en && i.dDate === new Date().toLocaleDateString('th-TH') && i.isS);if (!rec.length) { c.innerHTML = <p class="text-center py-2 text-slate-500 italic">ไม่มีข้อมูลการลงเวลาในวันนี้</p>; return; }rec.forEach(i => {const d = document.createElement('div'); d.className = "flex justify-between items-center bg-slate-800 p-2.5 rounded-lg border border-slate-700 shadow";const b = i.type === 'Clock In' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800';d.innerHTML = <span class="px-2 py-0.5 rounded text-[10px] font-bold ${b}">${i.type}</span><span class="font-mono text-slate-200 font-bold">${i.dTime} น.</span><span class="text-slate-400 text-[10px]">(ห่างจุดหลัก ${i.dist} ม.)</span>;c.appendChild(d);});}function loadAdminDashboard() {const l = JSON.parse(localStorage.getItem('gps_v3')) || [], su = document.getElementById('adminFilterUser').value, sm = document.getElementById('adminFilterMonth').value;const sT = document.getElementById('adminSuccessLogBody'), fT = document.getElementById('adminFailLogBody');sT.innerHTML = ''; fT.innerHTML = ''; if (!sm) return;const fLogs = l.filter(i => { const d = new Date(i.rIso); return (su === 'all' || i.name === su) && (${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')} === sm); });const sG = fLogs.filter(i => i.isS), fG = fLogs.filter(i => !i.isS);if (!sG.length) sT.innerHTML = <tr><td colspan="5" class="text-center py-4 text-slate-500 italic">ไม่พบประวัติสำเร็จ</td></tr>;else sG.forEach(i => { const tr = document.createElement('tr'); tr.className = "border-b border-slate-700 hover:bg-slate-700/40"; tr.innerHTML = <td class="py-2.5 px-2.5">${i.dDate}</td><td class="py-2.5 px-2.5 font-semibold text-white">${i.name}</td><td class="py-2.5 px-2.5 ${i.type==='Clock In'?'text-emerald-400':'text-rose-400'}">${i.type}</td><td class="py-2.5 px-2.5 font-mono">${i.dTime}</td><td class="py-2.5 px-2.5 text-slate-500">${i.dist} ม.</td>; sT.appendChild(tr); });if (!fG.length) fT.innerHTML = <tr><td colspan="4" class="text-center py-4 text-slate-600 italic">ไม่มีประวัติกดนอกพื้นที่</td></tr>;else fG.forEach(i => { const tr = document.createElement('tr'); tr.className = "border-b border-rose-950/50 bg-rose-950/10 text-rose-200/90"; tr.innerHTML = <td class="py-2 px-2.5 font-mono text-slate-400">${i.dDate} ${i.dTime}</td><td class="py-2 px-2.5 font-bold text-rose-300">${i.name}</td><td class="py-2 px-2.5 font-mono text-[10px] text-amber-400 bg-slate-900/50 rounded p-1 inline-block mt-1">${i.aLt}, ${i.aLg}</td><td class="py-2 px-2.5 text-right pr-4 font-bold text-rose-400">${i.dist} ม.</td>; fT.appendChild(tr); });calcHours(sG);}function calcHours(sl) {let wg = {}; [...sl].reverse().forEach(i => { const k = ${i.name}_${i.dDate}; if (!wg[k]) wg[k] = { in: null, out: null }; if (i.type === 'Clock In' && !wg[k].in) wg[k].in = new Date(i.rIso); else if (i.type === 'Clock Out') wg[k].out = new Date(i.rIso); });let ms = 0; for (let k in wg) { if (wg[k].in && wg[k].out && wg[k].out > wg[k].in) ms += (wg[k].out - wg[k].in); }document.getElementById('adminTotalHours').innerText = ${(ms / (1000 * 60 * 60)).toFixed(1)} ชั่วโมง;}function clearAllData() { if (confirm('⚠️ ต้องการลบประวัติทั้งหมดใช่หรือไม่?')) { localStorage.removeItem('gps_v3'); loadAdminDashboard(); } }
+                alert('❌ Password ไม่ถูกต้อง');
+                document.getElementById('adminPassword').value = '';
+            }
+        }
 
+        function logoutAdmin() {
+            isAdminLoggedIn = false;
+            document.getElementById('adminLoginSection').style.display = 'block';
+            document.getElementById('adminContent').style.display = 'none';
+            document.getElementById('adminPassword').value = '';
+        }
 
-        bE.className = "flex-1 py-4 text-center text-sm font-bold border-b-2 border-transparent text-slate-400 hover:bg-slate-700/50";cE.classList.add('hidden'); cA.classList.remove('hidden');if (auth) { document.getElementById('adminAuthZone').classList.add('hidden'); document.getElementById('adminDashboardZone').classList.remove('hidden'); loadAdminDashboard(); }else { document.getElementById('adminAuthZone').classList.remove('hidden'); document.getElementById('adminDashboardZone').classList.add('hidden'); }}}function chkGPS() {if (!navigator.geolocation) { showW(true); return; }navigator.geolocation.getCurrentPosition(() => showW(false), () => showW(true), { timeout: 2000 });}function showW(s) {document.getElementById('locationPermissionWarning').classList.toggle('hidden', !s);const b1 = document.getElementById('btnClockIn'), b2 = document.getElementById('btnClockOut');if(b1 && b2) { b1.disabled = s; b2.disabled = s; }}function handleUserSwitch() {const k = document.getElementById('userSelect').value;document.getElementById('employeeActionZone').classList.toggle('hidden', !k);if (k) { document.getElementById('targetCoords').innerText = ${cf[k].lat.toFixed(6)}, ${cf[k].lng.toFixed(6)}; renderEmp(cf[k].name); }}function verifyAdminPassword() {if (document.getElementById('adminPassword').value === 'admin1234') { auth = true; document.getElementById('adminAuthZone').classList.add('hidden'); document.getElementById('adminDashboardZone').classList.remove('hidden'); loadAdminDashboard(); }else alert('❌ รหัสผ่านไม่ถูกต้อง');}function triggerGPSCheck(act) {const u = cf[document.getElementById('userSelect').value], ls = document.getElementById('gpsLoadingStatus');ls.innerText = "⏳ กำลังเชื่อมต่อสัญญาณ GPS..."; ls.classList.remove('hidden');navigator.geolocation.getCurrentPosition((pos) => {ls.classList.add('hidden'); showW(false);const d = getDist(pos.coords.latitude, pos.coords.longitude, u.lat, u.lng);if (d <= 100) { saveL(u.name, act, d, true, pos.coords.latitude, pos.coords.longitude); alert(✅ บันทึก ${act} สำเร็จ! ห่าง ${Math.round(d)} เมตร); renderEmp(u.name); }else { saveL(u.name, act, d, false, pos.coords.latitude, pos.coords.longitude); alert(❌ ล้มเหลว! อยู่นอกพื้นที่ทำงาน (ห่าง ${Math.round(d)} ม. / ห้ามเกิน 100 ม.)); }}, () => { ls.classList.add('hidden'); showW(true); alert("❌ กรุณาเปิดระบบ Location บนอุปกรณ์ของคุณก่อนนะครับ"); }, { enableHighAccuracy: true, timeout: 12000 });}function getDist(la1, lo1, la2, lo2) {const R = 6371e3, p1 = la1 * Math.PI / 180, p2 = la2 * Math.PI / 180, dLat = (la2 - la1) * Math.PI / 180, dLon = (lo2 - lo1) * Math.PI / 180;const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dLon/2) * Math.sin(dLon/2);return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));}function saveL(n, t, d, s, al, ag) {let l = JSON.parse(localStorage.getItem('gps_v3')) || []; const now = new Date();l.unshift({ name: n, type: t, dDate: now.toLocaleDateString('th-TH'), dTime: now.toLocaleTimeString('th-TH'), rIso: now.toISOString(), dist: Math.round(d), isS: s, aLt: al.toFixed(6), aLg: ag.toFixed(6) });localStorage.setItem('gps_v3', JSON.stringify(l));}function renderEmp(en) {const l = JSON.parse(localStorage.getItem('gps_v3')) || [], c = document.getElementById('empTodayLogs'); c.innerHTML = '';const rec = l.filter(i => i.name === en && i.dDate === new Date().toLocaleDateString('th-TH') && i.isS);if (!rec.length) { c.innerHTML = <p class="text-center py-2 text-slate-500 italic">ไม่มีข้อมูลการลงเวลาในวันนี้</p>; return; }rec.forEach(i => {const d = document.createElement('div'); d.className = "flex justify-between items-center bg-slate-800 p-2.5 rounded-lg border border-slate-700 shadow";const b = i.type === 'Clock In' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800';d.innerHTML = <span class="px-2 py-0.5 rounded text-[10px] font-bold ${b}">${i.type}</span><span class="font-mono text-slate-200 font-bold">${i.dTime} น.</span><span class="text-slate-400 text-[10px]">(ห่างจุดหลัก ${i.dist} ม.)</span>;c.appendChild(d);});}function loadAdminDashboard() {const l = JSON.parse(localStorage.getItem('gps_v3')) || [], su = document.getElementById('adminFilterUser').value, sm = document.getElementById('adminFilterMonth').value;const sT = document.getElementById('adminSuccessLogBody'), fT = document.getElementById('adminFailLogBody');sT.innerHTML = ''; fT.innerHTML = ''; if (!sm) return;const fLogs = l.filter(i => { const d = new Date(i.rIso); return (su === 'all' || i.name === su) && (${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')} === sm); });const sG = fLogs.filter(i => i.isS), fG = fLogs.filter(i => !i.isS);if (!sG.length) sT.innerHTML = <tr><td colspan="5" class="text-center py-4 text-slate-500 italic">ไม่พบประวัติสำเร็จ</td></tr>;else sG.forEach(i => { const tr = document.createElement('tr'); tr.className = "border-b border-slate-700 hover:bg-slate-700/40"; tr.innerHTML = <td class="py-2.5 px-2.5">${i.dDate}</td><td class="py-2.5 px-2.5 font-semibold text-white">${i.name}</td><td class="py-2.5 px-2.5 ${i.type==='Clock In'?'text-emerald-400':'text-rose-400'}">${i.type}</td><td class="py-2.5 px-2.5 font-mono">${i.dTime}</td><td class="py-2.5 px-2.5 text-slate-500">${i.dist} ม.</td>; sT.appendChild(tr); });if (!fG.length) fT.innerHTML = <tr><td colspan="4" class="text-center py-4 text-slate-600 italic">ไม่มีประวัติกดนอกพื้นที่</td></tr>;else fG.forEach(i => { const tr = document.createElement('tr'); tr.className = "border-b border-rose-950/50 bg-rose-950/10 text-rose-200/90"; tr.innerHTML = <td class="py-2 px-2.5 font-mono text-slate-400">${i.dDate} ${i.dTime}</td><td class="py-2 px-2.5 font-bold text-rose-300">${i.name}</td><td class="py-2 px-2.5 font-mono text-[10px] text-amber-400 bg-slate-900/50 rounded p-1 inline-block mt-1">${i.aLt}, ${i.aLg}</td><td class="py-2 px-2.5 text-right pr-4 font-bold text-rose-400">${i.dist} ม.</td>; fT.appendChild(tr); });calcHours(sG);}function calcHours(sl) {let wg = {}; [...sl].reverse().forEach(i => { const k = ${i.name}_${i.dDate}; if (!wg[k]) wg[k] = { in: null, out: null }; if (i.type === 'Clock In' && !wg[k].in) wg[k].in = new Date(i.rIso); else if (i.type === 'Clock Out') wg[k].out = new Date(i.rIso); });let ms = 0; for (let k in wg) { if (wg[k].in && wg[k].out && wg[k].out > wg[k].in) ms += (wg[k].out - wg[k].in); }document.getElementById('adminTotalHours').innerText = ${(ms / (1000 * 60 * 60)).toFixed(1)} ชั่วโมง;}function clearAllData() { if (confirm('⚠️ ต้องการลบประวัติทั้งหมดใช่หรือไม่?')) { localStorage.removeItem('gps_v3'); loadAdminDashboard(); } }
+        function loadAdminReport() {
+            if (!isAdminLoggedIn) return;
+
+            const empFilter = document.getElementById('adminEmpFilter').value;
+            const monthFilter = document.getElementById('adminMonthFilter').value;
+
+            document.getElementById('adminReportLoading').style.display = 'block';
+            document.getElementById('adminReport').innerHTML = '';
+
+            database.ref('records').once('value', (snapshot) => {
+                document.getElementById('adminReportLoading').style.display = 'none';
+                const allData = snapshot.val() || {};
+                let html = '';
+                let totalHours = 0;
+                let totalDays = 0;
+
+                for (let empId in allData) {
+                    if (empFilter && empId !== empFilter) continue;
+                    if (!employees[empId]) continue;
+
+                    const empData = allData[empId];
+                    let empTotalHours = 0;
+                    let empTotalDays = 0;
+                    let empHtml = '';
+
+                    for (let date in empData) {
+                        if (monthFilter && !date.includes(`-${monthFilter}-`)) continue;
+
+                        const record = empData[date];
+                        if (!record.checkOut) continue;
+
+                        const hours = ((new Date(record.checkOut) - new Date(record.checkIn)) / (1000 * 60 * 60)).toFixed(2);
+                        const checkInTime = new Date(record.checkIn).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                        const checkOutTime = new Date(record.checkOut).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+                        empHtml += `
+                            <tr>
+                                <td>${date}</td>
+                                <td>${record.location}</td>
+                                <td>${checkInTime}</td>
+                                <td>${checkOutTime}</td>
+                                <td>${hours}</td>
+                            </tr>
+                        `;
+                        empTotalHours += parseFloat(hours);
+                        empTotalDays++;
+                        totalHours += parseFloat(hours);
+                        totalDays++;
+                    }
+
+                    if (empHtml) {
+                        html += `
+                            <div style="margin-bottom: 24px;">
+                                <h3 style="font-size: 16px; margin-bottom: 12px;">${employees[empId].name}</h3>
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>วันที่</th>
+                                            <th>Location</th>
+                                            <th>เข้า</th>
+                                            <th>ออก</th>
+                                            <th>ชั่วโมง</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>${empHtml}</tbody>
+                                </table>
+                                <div class="total-box">
+                                    <strong>รวม:</strong> ${empTotalHours.toFixed(2)} ชั่วโมง (${empTotalDays} วัน)
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
+                if (html) {
+                    html = `
+                        <div class="info-box">
+                            <strong>รวมทั้งหมด:</strong> ${totalHours.toFixed(2)} ชั่วโมง (${totalDays} วัน)
+                        </div>
+                    ` + html;
+                    document.getElementById('adminReport').innerHTML = html;
+                } else {
+                    document.getElementById('adminReport').innerHTML = '<div class="empty-msg">ไม่มีข้อมูล</div>';
+                }
+            });
+        }
+
+        // Initialize
+        console.log('✓ Firebase connected');
+        console.log('✓ App ready');
+    </script>
+</body>
+</html>
