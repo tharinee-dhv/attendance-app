@@ -188,8 +188,8 @@
     </div>
 
     <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
 
     <script>
         const app = {
@@ -228,6 +228,10 @@
                 };
 
                 try {
+                    if (typeof firebase === 'undefined') {
+                        console.error('Firebase SDK not loaded — ตรวจสอบ <script> ของ firebase-*-compat.js');
+                        return;
+                    }
                     firebase.initializeApp(firebaseConfig);
                     this.database = firebase.database();
                     console.log('✓ Firebase initialized');
