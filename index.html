@@ -231,9 +231,69 @@
                     firebase.initializeApp(firebaseConfig);
                     this.database = firebase.database();
                     console.log('✓ Firebase initialized');
+
+                    // เฝ้าสถานะการเชื่อมต่อ เพื่อช่วยวินิจฉัยกรณีค้าง
+                    this.database.ref('.info/connected').on('value', (snap) => {
+                        const connected = snap.val() === true;
+                        console.log(connected ? '✓ Firebase connected' : '⚠ Firebase NOT connected');
+                    });
                 } catch (e) {
                     console.error('Firebase init error:', e);
                 }
+            },
+
+            // ===== Firebase helpers พร้อม timeout กันค้าง =====
+            // หุ้ม .once()/.set()/.update() ด้วย timer ฝั่ง JS
+            // ถ้า Firebase ไม่ตอบ (ปฏิเสธสิทธิ์ / เชื่อมต่อไม่ได้) จะ reject แทนการค้างเงียบ
+            dbOnce(path, timeoutMs = 8000) {
+                return new Promise((resolve, reject) => {
+                    if (!this.database) { reject(new Error('DB_NOT_READY')); return; }
+                    let settled = false;
+                    const watchdog = setTimeout(() => {
+                        if (!settled) { settled = true; reject(new Error('DB_TIMEOUT')); }
+                    }, timeoutMs);
+                    this.database.ref(path).once('value',
+                        (snap) => {
+                            if (settled) return;
+                            settled = true; clearTimeout(watchdog); resolve(snap.val());
+                        },
+                        (err) => {   // ← error callback ที่เดิมขาดหายไป (ต้นเหตุการค้าง)
+                            if (settled) return;
+                            settled = true; clearTimeout(watchdog); reject(err);
+                        }
+                    );
+                });
+            },
+
+            dbWrite(path, value, mode = 'set', timeoutMs = 8000) {
+                return new Promise((resolve, reject) => {
+                    if (!this.database) { reject(new Error('DB_NOT_READY')); return; }
+                    let settled = false;
+                    const watchdog = setTimeout(() => {
+                        if (!settled) { settled = true; reject(new Error('DB_TIMEOUT')); }
+                    }, timeoutMs);
+                    const ref = this.database.ref(path);
+                    const op = (mode === 'update') ? ref.update(value) : ref.set(value);
+                    op.then(() => {
+                        if (settled) return;
+                        settled = true; clearTimeout(watchdog); resolve();
+                    }).catch((err) => {
+                        if (settled) return;
+                        settled = true; clearTimeout(watchdog); reject(err);
+                    });
+                });
+            },
+
+            // แปลง error ของ Firebase เป็นข้อความที่ผู้ใช้เข้าใจ
+            describeDbError(err) {
+                const code = (err && (err.code || err.message)) || '';
+                if (String(code).toLowerCase().includes('permission'))
+                    return '❌ ฐานข้อมูลปฏิเสธสิทธิ์ (permission_denied) — ตรวจ Rules ใน Firebase';
+                if (code === 'DB_TIMEOUT')
+                    return '❌ ฐานข้อมูลไม่ตอบสนอง (timeout) — ตรวจการเชื่อมต่อ/Rules';
+                if (code === 'DB_NOT_READY')
+                    return '❌ ยังเชื่อมต่อฐานข้อมูลไม่สำเร็จ';
+                return '❌ บันทึก/อ่านฐานข้อมูลไม่สำเร็จ: ' + code;
             },
 
             // ===== GPS helper พร้อม watchdog กันค้าง =====
@@ -332,6 +392,8 @@
                         document.getElementById('todayCheckOut').textContent = 'กำลังทำงาน';
                         document.getElementById('todayHours').textContent = '-';
                     }
+                }, (err) => {
+                    console.error('loadTodayData read error:', err);
                 });
             },
 
@@ -419,40 +481,50 @@
                 }
 
                 const today = this.getTodayDate();
-                this.database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
-                    const data = snapshot.val();
+                let existing;
+                try {
+                    existing = await this.dbOnce(`records/${empId}/${today}`);
+                } catch (err) {
+                    console.error('DB read error:', err);
+                    msg.textContent = this.describeDbError(err);
+                    msg.style.color = '#721c24';
+                    btn.disabled = false;
+                    return;
+                }
 
-                    if (data && data.checkIn) {
-                        msg.textContent = '❌ คุณได้เข้างานแล้ว';
-                        msg.style.color = '#721c24';
-                        btn.disabled = false;
-                        return;
-                    }
+                if (existing && existing.checkIn) {
+                    msg.textContent = '❌ คุณได้เข้างานแล้ว';
+                    msg.style.color = '#721c24';
+                    btn.disabled = false;
+                    return;
+                }
 
-                    const now = new Date().toISOString();
-                    this.database.ref(`records/${empId}/${today}`).set({
+                const now = new Date().toISOString();
+                try {
+                    await this.dbWrite(`records/${empId}/${today}`, {
                         checkIn: now,
                         checkOut: null,
                         location: location.name,
                         gpsLat: latitude,
                         gpsLng: longitude
-                    }).then(() => {
-                        msg.textContent = '✓ เข้างานสำเร็จ';
-                        msg.style.color = '#155724';
-                        setTimeout(() => {
-                            this.loadTodayData(empId);
-                            this.updateGPSStatus();
-                            this.updateButtonState();
-                            btn.disabled = false;
-                            msg.style.display = 'none';
-                        }, 1500);
-                    }).catch((e) => {
-                        console.error('DB write error:', e);
-                        msg.textContent = '❌ บันทึกไม่สำเร็จ (ตรวจสอบการเชื่อมต่อ)';
-                        msg.style.color = '#721c24';
-                        btn.disabled = false;
-                    });
-                });
+                    }, 'set');
+                } catch (err) {
+                    console.error('DB write error:', err);
+                    msg.textContent = this.describeDbError(err);
+                    msg.style.color = '#721c24';
+                    btn.disabled = false;
+                    return;
+                }
+
+                msg.textContent = '✓ เข้างานสำเร็จ';
+                msg.style.color = '#155724';
+                setTimeout(() => {
+                    this.loadTodayData(empId);
+                    this.updateGPSStatus();
+                    this.updateButtonState();
+                    btn.disabled = false;
+                    msg.style.display = 'none';
+                }, 1500);
             },
 
             async checkOut() {
@@ -491,43 +563,51 @@
                 }
 
                 const today = this.getTodayDate();
-                this.database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
-                    const data = snapshot.val();
+                let existing;
+                try {
+                    existing = await this.dbOnce(`records/${empId}/${today}`);
+                } catch (err) {
+                    console.error('DB read error:', err);
+                    msg.textContent = this.describeDbError(err);
+                    msg.style.color = '#721c24';
+                    btn.disabled = false;
+                    return;
+                }
 
-                    if (!data || !data.checkIn) {
-                        msg.textContent = '❌ กรุณาเข้างานก่อน';
-                        msg.style.color = '#721c24';
-                        btn.disabled = false;
-                        return;
-                    }
+                if (!existing || !existing.checkIn) {
+                    msg.textContent = '❌ กรุณาเข้างานก่อน';
+                    msg.style.color = '#721c24';
+                    btn.disabled = false;
+                    return;
+                }
 
-                    if (data.checkOut) {
-                        msg.textContent = '❌ คุณได้เลิกงานแล้ว';
-                        msg.style.color = '#721c24';
-                        btn.disabled = false;
-                        return;
-                    }
+                if (existing.checkOut) {
+                    msg.textContent = '❌ คุณได้เลิกงานแล้ว';
+                    msg.style.color = '#721c24';
+                    btn.disabled = false;
+                    return;
+                }
 
-                    const now = new Date().toISOString();
-                    this.database.ref(`records/${empId}/${today}`).update({
-                        checkOut: now
-                    }).then(() => {
-                        msg.textContent = '✓ เลิกงานสำเร็จ';
-                        msg.style.color = '#155724';
-                        setTimeout(() => {
-                            this.loadTodayData(empId);
-                            this.updateGPSStatus();
-                            this.updateButtonState();
-                            btn.disabled = false;
-                            msg.style.display = 'none';
-                        }, 1500);
-                    }).catch((e) => {
-                        console.error('DB write error:', e);
-                        msg.textContent = '❌ บันทึกไม่สำเร็จ (ตรวจสอบการเชื่อมต่อ)';
-                        msg.style.color = '#721c24';
-                        btn.disabled = false;
-                    });
-                });
+                const now = new Date().toISOString();
+                try {
+                    await this.dbWrite(`records/${empId}/${today}`, { checkOut: now }, 'update');
+                } catch (err) {
+                    console.error('DB write error:', err);
+                    msg.textContent = this.describeDbError(err);
+                    msg.style.color = '#721c24';
+                    btn.disabled = false;
+                    return;
+                }
+
+                msg.textContent = '✓ เลิกงานสำเร็จ';
+                msg.style.color = '#155724';
+                setTimeout(() => {
+                    this.loadTodayData(empId);
+                    this.updateGPSStatus();
+                    this.updateButtonState();
+                    btn.disabled = false;
+                    msg.style.display = 'none';
+                }, 1500);
             },
 
             updateButtonState() {
