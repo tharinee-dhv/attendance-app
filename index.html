@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance GPS System</title>
+    <title>Attendance System</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -50,7 +50,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🕐 Attendance GPS System</h1>
+            <h1>🕐 Attendance System</h1>
             <p>Well Brand Am Hospital</p>
         </div>
 
@@ -660,87 +660,140 @@
                 document.getElementById('adminPassword').value = '';
             },
 
-            loadAdminReport() {
+            async loadAdminReport() {
                 if (!this.isAdminLoggedIn || !this.database) return;
 
                 const empFilter = document.getElementById('adminEmpFilter').value;
                 const monthFilter = document.getElementById('adminMonthFilter').value;
+                const reportDiv = document.getElementById('adminReport');
 
-                this.database.ref('records').once('value', (snapshot) => {
-                    const allData = snapshot.val() || {};
-                    let html = '';
-                    let totalHours = 0;
-                    let totalDays = 0;
+                reportDiv.innerHTML = '<div class="info-box"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</div>';
 
-                    for (let empId in allData) {
-                        if (empFilter && empId !== empFilter) continue;
-                        if (!this.employees[empId]) continue;
-
-                        const empData = allData[empId];
-                        let empTotalHours = 0;
-                        let empTotalDays = 0;
-                        let empHtml = '';
-
-                        for (let date in empData) {
-                            if (monthFilter && !date.includes(`-${monthFilter}-`)) continue;
-
-                            const record = empData[date];
-                            if (!record.checkOut) continue;
-
-                            const hours = ((new Date(record.checkOut) - new Date(record.checkIn)) / (1000 * 60 * 60)).toFixed(2);
-                            const checkInTime = new Date(record.checkIn).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-                            const checkOutTime = new Date(record.checkOut).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-
-                            empHtml += `
-                                <tr>
-                                    <td>${date}</td>
-                                    <td>${record.location}</td>
-                                    <td>${checkInTime}</td>
-                                    <td>${checkOutTime}</td>
-                                    <td>${hours}</td>
-                                </tr>
-                            `;
-                            empTotalHours += parseFloat(hours);
-                            empTotalDays++;
-                            totalHours += parseFloat(hours);
-                            totalDays++;
-                        }
-
-                        if (empHtml) {
-                            html += `
-                                <div style="margin-bottom: 24px;">
-                                    <h3 style="font-size: 16px; margin-bottom: 12px;">${this.employees[empId].name}</h3>
-                                    <table class="table">
-                                        <thead>
-                                            <tr>
-                                                <th>วันที่</th>
-                                                <th>Location</th>
-                                                <th>เข้า</th>
-                                                <th>ออก</th>
-                                                <th>ชั่วโมง</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>${empHtml}</tbody>
-                                    </table>
-                                    <div class="total-box">
-                                        <strong>รวม:</strong> ${empTotalHours.toFixed(2)} ชั่วโมง (${empTotalDays} วัน)
-                                    </div>
-                                </div>
-                            `;
-                        }
+                let allData;
+                try {
+                    allData = await this.dbOnce('records');
+                } catch (err) {
+                    console.error('Admin read error:', err);
+                    const code = (err && (err.code || err.message)) || '';
+                    let hint = this.describeDbError(err);
+                    if (String(code).toLowerCase().includes('permission')) {
+                        hint += '<br><small>สาเหตุ: Rules อนุญาตเฉพาะ records/$uid แต่หน้า Admin อ่านที่ราก records — โปรดปรับ Rules ให้ .read ที่ระดับ records</small>';
                     }
+                    reportDiv.innerHTML = `<div class="error-box">${hint}</div>`;
+                    return;
+                }
 
-                    if (html) {
-                        html = `
-                            <div class="info-box">
-                                <strong>รวมทั้งหมด:</strong> ${totalHours.toFixed(2)} ชั่วโมง (${totalDays} วัน)
-                            </div>
-                        ` + html;
-                        document.getElementById('adminReport').innerHTML = html;
+                allData = allData || {};
+                let html = '';
+                let totalHours = 0;
+                let totalDays = 0;
+
+                // helper: เวลา HH:MM
+                const fmtTime = (iso) => new Date(iso).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                // helper: ชื่อวันภาษาไทยแบบสั้น
+                const thDay = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+
+                const monthNames = {
+                    '01':'มกราคม','02':'กุมภาพันธ์','03':'มีนาคม','04':'เมษายน','05':'พฤษภาคม','06':'มิถุนายน',
+                    '07':'กรกฎาคม','08':'สิงหาคม','09':'กันยายน','10':'ตุลาคม','11':'พฤศจิกายน','12':'ธันวาคม'
+                };
+
+                for (let empId in allData) {
+                    if (empFilter && empId !== empFilter) continue;
+                    if (!this.employees[empId]) continue;
+
+                    const empData = allData[empId];
+                    let empTotalHours = 0;
+                    let empTotalDays = 0;
+                    let empHtml = '';
+
+                    // วันที่ของพนักงานคนนี้ที่ตรงกับตัวกรองเดือน
+                    const matchedDates = Object.keys(empData)
+                        .filter(d => !monthFilter || d.includes(`-${monthFilter}-`));
+
+                    // สร้างรายการ "วันที่ที่จะแสดง"
+                    let dayList = [];
+                    if (monthFilter) {
+                        // เลือกเดือน → ไล่ครบทุกวันของเดือนนั้น (เติมวันที่ไม่มีข้อมูลเป็นแถวว่าง)
+                        const years = [...new Set(matchedDates.map(d => d.slice(0, 4)))].sort();
+                        const m = parseInt(monthFilter, 10);
+                        for (const y of years) {
+                            const daysInMonth = new Date(parseInt(y, 10), m, 0).getDate();
+                            for (let day = 1; day <= daysInMonth; day++) {
+                                dayList.push(`${y}-${monthFilter}-${String(day).padStart(2, '0')}`);
+                            }
+                        }
                     } else {
-                        document.getElementById('adminReport').innerHTML = '<div class="empty-msg">ไม่มีข้อมูล</div>';
+                        // ไม่เลือกเดือน → แสดงเฉพาะวันที่มีข้อมูล เรียงตามวันที่
+                        dayList = matchedDates.sort();
                     }
-                });
+
+                    for (const date of dayList) {
+                        const record = empData[date] || null;
+                        const dow = thDay[new Date(date + 'T00:00:00').getDay()];
+
+                        let ci = '-', co = '-', hrs = '-';
+                        let rowStyle = '';
+
+                        if (record && record.checkIn) {
+                            ci = fmtTime(record.checkIn);
+                            if (record.checkOut) {
+                                co = fmtTime(record.checkOut);
+                                const h = (new Date(record.checkOut) - new Date(record.checkIn)) / (1000 * 60 * 60);
+                                hrs = h.toFixed(2);
+                                empTotalHours += h; empTotalDays++;
+                                totalHours += h; totalDays++;
+                            } else {
+                                co = 'ยังไม่เลิกงาน';
+                            }
+                        } else {
+                            rowStyle = ' style="color:#bbb;"';  // วันที่ไม่มีข้อมูล แสดงสีจาง
+                        }
+
+                        empHtml += `
+                            <tr${rowStyle}>
+                                <td>${date} (${dow})</td>
+                                <td>${ci}</td>
+                                <td>${co}</td>
+                                <td>${hrs}</td>
+                            </tr>
+                        `;
+                    }
+
+                    if (empHtml) {
+                        const periodLabel = monthFilter ? ` — ${monthNames[monthFilter]}` : '';
+                        html += `
+                            <div style="margin-bottom: 24px;">
+                                <h3 style="font-size: 16px; margin-bottom: 12px;">${this.employees[empId].name}${periodLabel}</h3>
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>วันที่ (Date)</th>
+                                            <th>เข้า (Clock In)</th>
+                                            <th>ออก (Clock Out)</th>
+                                            <th>รวม (Total Hour)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>${empHtml}</tbody>
+                                </table>
+                                <div class="total-box">
+                                    <strong>รวมทั้งเดือน:</strong> ${empTotalHours.toFixed(2)} ชั่วโมง (มาทำงาน ${empTotalDays} วัน)
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
+                if (html) {
+                    html = `
+                        <div class="info-box">
+                            <strong>รวมทั้งหมด:</strong> ${totalHours.toFixed(2)} ชั่วโมง (${totalDays} วัน)
+                        </div>
+                    ` + html;
+                    reportDiv.innerHTML = html;
+                } else {
+                    reportDiv.innerHTML = '<div class="empty-msg">ไม่มีข้อมูลที่ตรงกับตัวกรอง</div>';
+                }
             }
         };
 
