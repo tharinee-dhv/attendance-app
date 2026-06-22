@@ -190,6 +190,13 @@
 
     <script>
         const app = {
+            // GPS Options (iOS Fix)
+            geoOptions: {
+                enableHighAccuracy: false,  // ← ไม่ต้อง precision สูง
+                timeout: 10000,              // ← 10 วินาที timeout
+                maximumAge: 0
+            },
+
             // Data
             employees: {
                 "1": { name: "นัท", location: 1, locationName: "Location 1" },
@@ -198,8 +205,8 @@
                 "4": { name: "มาย", location: 2, locationName: "Location 2" }
             },
             locations: {
-                1: { name: "Location 1", lat: 13.748638810033686, lng: 100.63870881219955, radius: 1000 },
-                2: { name: "Location 2", lat: 13.742930940465662, lng: 100.57758168932462, radius: 1000 }
+                1: { name: "Location 1", lat: 13.748680893790322, lng: 100.63910462007281, radius: 1000 },
+                2: { name: "Location 2", lat: 13.73514365960459, lng: 100.57695600473038, radius: 1000 }
             },
             currentEmp: null,
             isAdminLoggedIn: false,
@@ -296,22 +303,27 @@
                     return;
                 }
 
-                navigator.geolocation.getCurrentPosition((position) => {
-                    const { latitude, longitude } = position.coords;
-                    const location = this.locations[this.currentEmp.location];
-                    const distance = this.calculateDistance(latitude, longitude, location.lat, location.lng);
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        const location = this.locations[this.currentEmp.location];
+                        const distance = this.calculateDistance(latitude, longitude, location.lat, location.lng);
 
-                    if (distance <= location.radius) {
-                        statusDiv.innerHTML = `<div class="success-box"><i class="fas fa-check-circle"></i> ✓ อยู่ในพื้นที่ (${distance.toFixed(0)} เมตร)</div>`;
-                        document.getElementById('checkInBtn').disabled = false;
-                    } else {
-                        statusDiv.innerHTML = `<div class="error-box"><i class="fas fa-times-circle"></i> ✗ อยู่นอกพื้นที่ (${distance.toFixed(0)} เมตร)</div>`;
+                        if (distance <= location.radius) {
+                            statusDiv.innerHTML = `<div class="success-box"><i class="fas fa-check-circle"></i> ✓ อยู่ในพื้นที่ (${distance.toFixed(0)} เมตร)</div>`;
+                            document.getElementById('checkInBtn').disabled = false;
+                        } else {
+                            statusDiv.innerHTML = `<div class="error-box"><i class="fas fa-times-circle"></i> ✗ อยู่นอกพื้นที่ (${distance.toFixed(0)} เมตร)</div>`;
+                            document.getElementById('checkInBtn').disabled = true;
+                        }
+                    },
+                    (error) => {
+                        console.error('GPS Error:', error);
+                        statusDiv.innerHTML = '<div class="error-box"><i class="fas fa-exclamation-circle"></i> ไม่สามารถเข้าถึง GPS</div>';
                         document.getElementById('checkInBtn').disabled = true;
-                    }
-                }, () => {
-                    statusDiv.innerHTML = '<div class="error-box"><i class="fas fa-exclamation-circle"></i> ไม่สามารถเข้าถึง GPS (อนุญาต Location?)</div>';
-                    document.getElementById('checkInBtn').disabled = true;
-                });
+                    },
+                    this.geoOptions
+                );
             },
 
             calculateDistance(lat1, lon1, lat2, lon2) {
@@ -332,57 +344,62 @@
 
                 btn.disabled = true;
                 msg.style.display = 'block';
-                msg.textContent = '⏳ กำลังตรวจสอบ...';
+                msg.textContent = '⏳ กำลังตรวจสอบ... (ใจเย็นๆนะ 10 วินาที)';
                 msg.style.color = '#0c5460';
 
-                navigator.geolocation.getCurrentPosition((position) => {
-                    const { latitude, longitude } = position.coords;
-                    const location = this.locations[this.currentEmp.location];
-                    const distance = this.calculateDistance(latitude, longitude, location.lat, location.lng);
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        const location = this.locations[this.currentEmp.location];
+                        const distance = this.calculateDistance(latitude, longitude, location.lat, location.lng);
 
-                    if (distance > location.radius) {
-                        document.getElementById('distanceText').textContent = distance.toFixed(0);
-                        document.getElementById('outOfRangeModal').classList.add('show');
-                        btn.disabled = false;
-                        msg.style.display = 'none';
-                        return;
-                    }
-
-                    const today = this.getTodayDate();
-                    this.database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
-                        const data = snapshot.val();
-
-                        if (data && data.checkIn) {
-                            msg.textContent = '❌ คุณได้เข้างานแล้ว';
-                            msg.style.color = '#721c24';
+                        if (distance > location.radius) {
+                            document.getElementById('distanceText').textContent = distance.toFixed(0);
+                            document.getElementById('outOfRangeModal').classList.add('show');
                             btn.disabled = false;
+                            msg.style.display = 'none';
                             return;
                         }
 
-                        const now = new Date().toISOString();
-                        this.database.ref(`records/${empId}/${today}`).set({
-                            checkIn: now,
-                            checkOut: null,
-                            location: location.name,
-                            gpsLat: latitude,
-                            gpsLng: longitude
-                        }).then(() => {
-                            msg.textContent = '✓ เข้างานสำเร็จ';
-                            msg.style.color = '#155724';
-                            setTimeout(() => {
-                                this.loadTodayData(empId);
-                                this.updateGPSStatus();
-                                this.updateButtonState();
+                        const today = this.getTodayDate();
+                        this.database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
+                            const data = snapshot.val();
+
+                            if (data && data.checkIn) {
+                                msg.textContent = '❌ คุณได้เข้างานแล้ว';
+                                msg.style.color = '#721c24';
                                 btn.disabled = false;
-                                msg.style.display = 'none';
-                            }, 1500);
+                                return;
+                            }
+
+                            const now = new Date().toISOString();
+                            this.database.ref(`records/${empId}/${today}`).set({
+                                checkIn: now,
+                                checkOut: null,
+                                location: location.name,
+                                gpsLat: latitude,
+                                gpsLng: longitude
+                            }).then(() => {
+                                msg.textContent = '✓ เข้างานสำเร็จ';
+                                msg.style.color = '#155724';
+                                setTimeout(() => {
+                                    this.loadTodayData(empId);
+                                    this.updateGPSStatus();
+                                    this.updateButtonState();
+                                    btn.disabled = false;
+                                    msg.style.display = 'none';
+                                }, 1500);
+                            });
                         });
-                    });
-                }, () => {
-                    msg.textContent = '❌ ไม่สามารถเข้าถึง GPS';
-                    msg.style.color = '#721c24';
-                    btn.disabled = false;
-                });
+                    },
+                    (error) => {
+                        console.error('GPS Error:', error);
+                        msg.textContent = '❌ ไม่สามารถเข้าถึง GPS (ลองใหม่อีกครั้ง)';
+                        msg.style.color = '#721c24';
+                        btn.disabled = false;
+                    },
+                    this.geoOptions
+                );
             },
 
             checkOut() {
@@ -392,60 +409,65 @@
 
                 btn.disabled = true;
                 msg.style.display = 'block';
-                msg.textContent = '⏳ กำลังตรวจสอบ...';
+                msg.textContent = '⏳ กำลังตรวจสอบ... (ใจเย็นๆนะ 10 วินาที)';
                 msg.style.color = '#0c5460';
 
-                navigator.geolocation.getCurrentPosition((position) => {
-                    const { latitude, longitude } = position.coords;
-                    const location = this.locations[this.currentEmp.location];
-                    const distance = this.calculateDistance(latitude, longitude, location.lat, location.lng);
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        const location = this.locations[this.currentEmp.location];
+                        const distance = this.calculateDistance(latitude, longitude, location.lat, location.lng);
 
-                    if (distance > location.radius) {
-                        document.getElementById('distanceText').textContent = distance.toFixed(0);
-                        document.getElementById('outOfRangeModal').classList.add('show');
-                        btn.disabled = false;
-                        msg.style.display = 'none';
-                        return;
-                    }
-
-                    const today = this.getTodayDate();
-                    this.database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
-                        const data = snapshot.val();
-
-                        if (!data || !data.checkIn) {
-                            msg.textContent = '❌ กรุณาเข้างานก่อน';
-                            msg.style.color = '#721c24';
+                        if (distance > location.radius) {
+                            document.getElementById('distanceText').textContent = distance.toFixed(0);
+                            document.getElementById('outOfRangeModal').classList.add('show');
                             btn.disabled = false;
+                            msg.style.display = 'none';
                             return;
                         }
 
-                        if (data.checkOut) {
-                            msg.textContent = '❌ คุณได้เลิกงานแล้ว';
-                            msg.style.color = '#721c24';
-                            btn.disabled = false;
-                            return;
-                        }
+                        const today = this.getTodayDate();
+                        this.database.ref(`records/${empId}/${today}`).once('value', (snapshot) => {
+                            const data = snapshot.val();
 
-                        const now = new Date().toISOString();
-                        this.database.ref(`records/${empId}/${today}`).update({
-                            checkOut: now
-                        }).then(() => {
-                            msg.textContent = '✓ เลิกงานสำเร็จ';
-                            msg.style.color = '#155724';
-                            setTimeout(() => {
-                                this.loadTodayData(empId);
-                                this.updateGPSStatus();
-                                this.updateButtonState();
+                            if (!data || !data.checkIn) {
+                                msg.textContent = '❌ กรุณาเข้างานก่อน';
+                                msg.style.color = '#721c24';
                                 btn.disabled = false;
-                                msg.style.display = 'none';
-                            }, 1500);
+                                return;
+                            }
+
+                            if (data.checkOut) {
+                                msg.textContent = '❌ คุณได้เลิกงานแล้ว';
+                                msg.style.color = '#721c24';
+                                btn.disabled = false;
+                                return;
+                            }
+
+                            const now = new Date().toISOString();
+                            this.database.ref(`records/${empId}/${today}`).update({
+                                checkOut: now
+                            }).then(() => {
+                                msg.textContent = '✓ เลิกงานสำเร็จ';
+                                msg.style.color = '#155724';
+                                setTimeout(() => {
+                                    this.loadTodayData(empId);
+                                    this.updateGPSStatus();
+                                    this.updateButtonState();
+                                    btn.disabled = false;
+                                    msg.style.display = 'none';
+                                }, 1500);
+                            });
                         });
-                    });
-                }, () => {
-                    msg.textContent = '❌ ไม่สามารถเข้าถึง GPS';
-                    msg.style.color = '#721c24';
-                    btn.disabled = false;
-                });
+                    },
+                    (error) => {
+                        console.error('GPS Error:', error);
+                        msg.textContent = '❌ ไม่สามารถเข้าถึง GPS (ลองใหม่อีกครั้ง)';
+                        msg.style.color = '#721c24';
+                        btn.disabled = false;
+                    },
+                    this.geoOptions
+                );
             },
 
             updateButtonState() {
@@ -580,7 +602,7 @@
 
         // Init
         app.initFirebase();
-        console.log('✓ App ready');
+        console.log('✓ App ready with iOS GPS fix');
     </script>
 </body>
 </html>
